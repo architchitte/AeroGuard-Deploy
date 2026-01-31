@@ -5,7 +5,7 @@ Transforms structured AQI analysis into human-readable explanations
 using generative AI (LLM) with intelligent fallback to templates.
 
 Features:
-- OpenAI API integration (GPT-3.5/GPT-4)
+- Google Gemini API integration
 - Template-based fallback for robustness
 - Persona-aware health advisories
 - No medical claims, preventive guidance only
@@ -33,7 +33,7 @@ class ExplanationStyle(Enum):
 
 class APIProvider(Enum):
     """Supported LLM API providers."""
-    OPENAI = "openai"
+    GEMINI = "gemini"
     TEMPLATE = "template"  # Fallback
     MOCK = "mock"          # For testing
 
@@ -41,9 +41,9 @@ class APIProvider(Enum):
 @dataclass
 class LLMConfiguration:
     """Configuration for LLM API integration."""
-    provider: APIProvider = APIProvider.OPENAI
+    provider: APIProvider = APIProvider.GEMINI
     api_key: Optional[str] = None
-    model: str = "gpt-3.5-turbo"  # or "gpt-4"
+    model: str = "gemini-pro"
     temperature: float = 0.7       # 0-1, creativity level
     max_tokens: int = 500          # Max response length
     timeout: int = 10              # Seconds
@@ -59,7 +59,7 @@ class LLMConfiguration:
     
     def is_configured(self) -> bool:
         """Check if LLM is properly configured."""
-        if self.provider == APIProvider.OPENAI:
+        if self.provider == APIProvider.GEMINI:
             return self.api_key is not None
         return self.provider in [APIProvider.TEMPLATE, APIProvider.MOCK]
 
@@ -362,17 +362,20 @@ class GenerativeExplainer:
         """
         self.config = config or LLMConfiguration()
         self.logger = logger
-        self._openai_client = None
+        self._gemini_client = None
         
-        # Initialize OpenAI client if configured
-        if self.config.provider == APIProvider.OPENAI and self.config.api_key:
+        # Initialize Gemini client if configured
+        if self.config.provider == APIProvider.GEMINI and self.config.api_key:
             try:
-                import openai
-                openai.api_key = self.config.api_key
-                self._openai_client = openai
-                self.logger.info("OpenAI client initialized successfully")
+                import google.generativeai as genai
+                genai.configure(api_key=self.config.api_key)
+                self._gemini_client = genai
+                self.logger.info("Google Gemini client initialized successfully")
             except ImportError:
-                self.logger.warning("OpenAI package not installed. Using template fallback.")
+                self.logger.warning("google-generativeai package not installed. Using template fallback.")
+                self.config.use_fallback = True
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize Gemini client: {str(e)}. Using template fallback.")
                 self.config.use_fallback = True
     
     def generate_explanation(
@@ -405,7 +408,7 @@ class GenerativeExplainer:
         )
         
         # Try LLM first if configured
-        if self.config.provider == APIProvider.OPENAI and self._can_use_llm():
+        if self.config.provider == APIProvider.GEMINI and self._can_use_llm():
             for attempt in range(self.config.retry_count):
                 try:
                     return self._generate_with_llm(
@@ -434,7 +437,7 @@ class GenerativeExplainer:
             return False
         if self.config.provider == APIProvider.MOCK:
             return True
-        return self.config.api_key is not None and self._openai_client is not None
+        return self.config.api_key is not None and self._gemini_client is not None
     
     def _generate_with_llm(
         self,
@@ -445,7 +448,7 @@ class GenerativeExplainer:
         persona: str,
         style: ExplanationStyle
     ) -> GeneratedExplanation:
-        """Generate explanation using LLM API."""
+        """Generate explanation using Gemini API."""
         
         # Handle mock provider for testing
         if self.config.provider == APIProvider.MOCK:
@@ -458,30 +461,26 @@ class GenerativeExplainer:
             aqi_value, trend, main_factors, duration, persona, style
         )
         
-        # Call OpenAI API
+        # Call Gemini API
         try:
-            response = self._openai_client.ChatCompletion.create(
-                model=self.config.model,
-                messages=[
-                    {"role": "system", "content": PromptBuilder.SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=self.config.temperature,
-                max_tokens=self.config.max_tokens,
-                top_p=self.config.top_p,
-                frequency_penalty=self.config.frequency_penalty,
-                presence_penalty=self.config.presence_penalty,
-                timeout=self.config.timeout
+            model = self._gemini_client.GenerativeModel(self.config.model)
+            response = model.generate_content(
+                prompt,
+                generation_config=self._gemini_client.types.GenerationConfig(
+                    temperature=self.config.temperature,
+                    max_output_tokens=self.config.max_tokens,
+                    top_p=self.config.top_p,
+                ),
             )
             
             # Parse response
-            response_text = response.choices[0].message.content
+            response_text = response.text
             return self._parse_llm_response(
                 response_text, aqi_value, persona
             )
         
         except Exception as e:
-            self.logger.error(f"OpenAI API error: {str(e)}")
+            self.logger.error(f"Gemini API error: {str(e)}")
             raise
     
     def _generate_mock_response(
@@ -556,7 +555,7 @@ class GenerativeExplainer:
         return GeneratedExplanation(
             explanation=data.get("explanation", response_text),
             health_advisory=advisory,
-            provider_used=APIProvider.OPENAI,
+            provider_used=APIProvider.GEMINI,
             model_used=self.config.model
         )
     
@@ -567,22 +566,20 @@ class GenerativeExplainer:
     ) -> HealthAdvisory:
         """Generate health advisory without full explanation."""
         
-        if self.config.provider == APIProvider.OPENAI and self._can_use_llm():
+        if self.config.provider == APIProvider.GEMINI and self._can_use_llm():
             try:
                 prompt = PromptBuilder.build_advisory_prompt(aqi_value, persona)
                 
-                response = self._openai_client.ChatCompletion.create(
-                    model=self.config.model,
-                    messages=[
-                        {"role": "system", "content": PromptBuilder.SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.5,
-                    max_tokens=200,
-                    timeout=self.config.timeout
+                model = self._gemini_client.GenerativeModel(self.config.model)
+                response = model.generate_content(
+                    prompt,
+                    generation_config=self._gemini_client.types.GenerationConfig(
+                        temperature=0.5,
+                        max_output_tokens=200,
+                    ),
                 )
                 
-                response_text = response.choices[0].message.content
+                response_text = response.text
                 
                 try:
                     data = json.loads(response_text)
@@ -596,7 +593,7 @@ class GenerativeExplainer:
                     pass
             
             except Exception as e:
-                self.logger.warning(f"LLM advisory failed: {str(e)}")
+                self.logger.warning(f"Gemini advisory failed: {str(e)}")
         
         # Fallback
         severity = "alert" if aqi_value > 200 else "warning" if aqi_value > 100 else "info"
@@ -611,14 +608,14 @@ class GenerativeExplainer:
 
 def create_generative_explainer(
     api_key: Optional[str] = None,
-    model: str = "gpt-3.5-turbo",
-    provider: APIProvider = APIProvider.OPENAI
+    model: str = "gemini-pro",
+    provider: APIProvider = APIProvider.GEMINI
 ) -> GenerativeExplainer:
     """
     Factory function to create a generative explainer.
     
     Args:
-        api_key: OpenAI API key (or None for template fallback)
+        api_key: Google Gemini API key (or None for template fallback)
         model: LLM model to use
         provider: API provider to use
     
