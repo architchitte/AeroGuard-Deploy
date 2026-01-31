@@ -25,9 +25,11 @@ from flask import Flask
 from flask_cors import CORS
 
 from app.config import Config
+from app.database import init_db
 from app.utils.error_handlers import register_error_handlers
 from app.routes import health, forecast, model
 from app.routes.model_comparison import model_comparison_bp
+from flask_jwt_extended import JWTManager
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +77,13 @@ def create_app(config_class=None):
         # Load configuration
         app.config.from_object(config_class)
         logger.info(f"✓ Configuration loaded: {config_class.__name__}")
+
+        # Initialize JWT
+        jwt = JWTManager()
+        jwt.init_app(app)
+
+        # Initialize database
+        init_db(app)
 
         # Initialize CORS (Cross-Origin Resource Sharing)
         _setup_cors(app)
@@ -155,11 +164,14 @@ def _register_blueprints(app):
     Args:
         app (Flask): Flask application instance
     """
+    from app.routes import user as user_routes
+
     blueprints = [
         (health.bp, "Health Check"),
         (forecast.bp, "Forecast"),
         (model.bp, "Model Management"),
         (model_comparison_bp, "Model Comparison"),
+        (user_routes.bp, "User API"),
     ]
 
     try:
@@ -178,32 +190,33 @@ def _register_hooks(app):
     Register request/response middleware hooks.
 
     Hooks:
-    - before_request: Log incoming requests
+    - before_request: Log incoming requests and generate request ID
     - after_request: Add response headers, log response times
 
     Args:
         app (Flask): Flask application instance
     """
+    import time
+    import uuid
+    from flask import request, g
+
     @app.before_request
     def before_request():
-        """Log incoming request details."""
-        import time
-        from flask import request, g
-
+        """Log incoming request details and generate request ID."""
         g.start_time = time.time()
-        logger.debug(f"→ {request.method:6} {request.path}")
+        g.request_id = str(uuid.uuid4())
+        logger.debug(f"→ {request.method:6} {request.path} [ID: {g.request_id}]")
 
     @app.after_request
     def after_request(response):
         """Log response details and add headers."""
-        import time
-        from flask import request, g
-
         # Calculate response time
         duration = time.time() - getattr(g, "start_time", 0)
 
         # Add response headers
-        response.headers["X-Process-Time"] = str(duration)
+        response.headers["X-Request-ID"] = getattr(g, "request_id", str(uuid.uuid4()))
+        response.headers["X-Response-Time"] = f"{duration:.6f}"
+        response.headers["X-Powered-By"] = "AeroGuard/1.0"
         response.headers["Server"] = "AeroGuard/1.0"
 
         logger.debug(f"← {response.status_code:3} {request.path} ({duration:.3f}s)")

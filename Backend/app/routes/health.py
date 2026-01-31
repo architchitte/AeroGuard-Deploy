@@ -4,16 +4,64 @@ Health Check Routes
 Endpoints for system health monitoring.
 """
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, current_app
 from datetime import datetime
 
-bp = Blueprint("health", __name__, url_prefix="/api/v1/health")
+bp = Blueprint("health", __name__)
 
 
-@bp.route("", methods=["GET"])
+@bp.route("/", methods=["GET"])
+def root():
+    """Root endpoint with API information."""
+    return jsonify(
+        {
+            "message": f"Welcome to {current_app.config.get('APP_NAME', 'AeroGuard')}",
+            "version": current_app.config.get("APP_VERSION", "1.0.0"),
+            "status": "running",
+            "timestamp": datetime.now().isoformat(),
+            "endpoints": {
+                "health": "/health",
+                "info": "/info",
+                "forecast": "/api/forecast",
+                "models": "/api/v1/models",
+            }
+        }
+    ), 200
+
+
+@bp.route("/health", methods=["GET"])
 def health_check():
+    """Health check endpoint."""
+    return jsonify(
+        {
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "version": current_app.config.get("APP_VERSION", "1.0.0"),
+            "service": current_app.config.get("APP_NAME", "AeroGuard"),
+            "environment": current_app.config.get("ENV", "production"),
+        }
+    ), 200
+
+
+@bp.route("/info", methods=["GET"])
+def info():
+    """Application information endpoint."""
+    return jsonify(
+        {
+            "name": current_app.config.get("APP_NAME", "AeroGuard"),
+            "version": current_app.config.get("APP_VERSION", "1.0.0"),
+            "description": current_app.config.get("APP_DESCRIPTION", "Air Quality Forecasting System"),
+            "environment": current_app.config.get("ENV", "production"),
+            "debug": current_app.debug,
+            "timestamp": datetime.now().isoformat(),
+        }
+    ), 200
+
+
+@bp.route("/api/v1/health", methods=["GET"])
+def health_check_api():
     """
-    Health check endpoint.
+    Health check endpoint (API version).
 
     Returns:
         JSON with health status
@@ -28,7 +76,7 @@ def health_check():
     ), 200
 
 
-@bp.route("/ready", methods=["GET"])
+@bp.route("/api/v1/health/ready", methods=["GET"])
 def readiness_check():
     """
     Readiness check endpoint.
@@ -44,7 +92,7 @@ def readiness_check():
     ), 200
 
 
-@bp.route("/live", methods=["GET"])
+@bp.route("/api/v1/health/live", methods=["GET"])
 def liveness_check():
     """
     Liveness check endpoint.

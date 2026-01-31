@@ -90,9 +90,55 @@ class Config:
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
 
     # ========================================================================
+    # Database Settings (NeonDB PostgreSQL or SQLite)
+    # ========================================================================
+    # NeonDB PostgreSQL connection (production)
+    # Format: postgresql://user:password@host.neon.tech/database
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///aeroguard.db"  # Default to SQLite for development
+    )
+    
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = False
+    
+    # Connection pool settings
+    # Use different engine options depending on the backend. Some
+    # DB-API drivers (e.g. SQLite's) don't accept `connect_timeout`.
+    if DATABASE_URL.startswith("sqlite:"):
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            "connect_args": {"check_same_thread": False}
+        }
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            "pool_size": 10,
+            "pool_recycle": 3600,
+            "pool_pre_ping": True,
+            "connect_args": {"connect_timeout": 10},
+        }
+
+    # ========================================================================
+    # Application Metadata
+    # ========================================================================
+    APP_NAME = "AeroGuard"
+    APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
+    APP_DESCRIPTION = "Air Quality Forecasting and Health Advisory System"
+
+    # ========================================================================
+    # Session & Security
+    # ========================================================================
+    SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+
+    # ========================================================================
     # Logging Settings
     # ========================================================================
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+    # JWT secret (falls back to SECRET_KEY if not provided)
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 
 
 class DevelopmentConfig(Config):
@@ -120,7 +166,7 @@ class TestingConfig(Config):
 
     Enables:
     - Testing mode
-    - Debug mode
+    - Debug disabled (for test stability)
     - In-memory operations
 
     Use this for running tests.
@@ -128,7 +174,7 @@ class TestingConfig(Config):
 
     ENV = "testing"
     TESTING = True
-    DEBUG = True
+    DEBUG = False
     LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
 
 
@@ -149,6 +195,7 @@ class ProductionConfig(Config):
     DEBUG = False
     JSONIFY_PRETTYPRINT_REGULAR = False
     LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
+    SESSION_COOKIE_SECURE = True  # Require HTTPS in production
 
     # Production must specify origins
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv(

@@ -9,6 +9,9 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 import numpy as np
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TimeSeriesPreprocessor:
@@ -58,7 +61,7 @@ class TimeSeriesPreprocessor:
 
         try:
             df = pd.read_csv(filepath)
-            print(f"✓ Loaded {len(df)} rows from {filepath.name}")
+            logger.debug(f"Loaded {len(df)} rows from {filepath.name}")
             return df
         except pd.errors.ParserError as e:
             raise pd.errors.ParserError(f"Failed to parse CSV: {str(e)}")
@@ -99,7 +102,7 @@ class TimeSeriesPreprocessor:
             df = df.set_index(col).sort_index()
             df.index.name = col
 
-            print(f"✓ Parsed datetime: {df.index.min()} to {df.index.max()}")
+            logger.debug(f"Parsed datetime: {df.index.min()} to {df.index.max()}")
             return df
 
         except Exception as e:
@@ -125,7 +128,17 @@ class TimeSeriesPreprocessor:
         Returns:
             DataFrame with missing values imputed
         """
-        initial_missing = df[self.target_columns].isnull().sum()
+        if method not in ["forward_fill", "rolling_mean", "both"]:
+            raise ValueError(f"Invalid method: {method}. Choose from 'forward_fill', 'rolling_mean', or 'both'")
+        
+        # Use only target columns that exist in the dataframe
+        cols_to_process = [col for col in self.target_columns if col in df.columns]
+        
+        if not cols_to_process:
+            # If no target columns exist, process all numeric columns
+            cols_to_process = df.select_dtypes(include=[np.number]).columns.tolist()
+        
+        initial_missing = df[cols_to_process].isnull().sum()
         self.missing_value_stats["before"] = initial_missing.to_dict()
 
         if method == "forward_fill":
@@ -134,7 +147,7 @@ class TimeSeriesPreprocessor:
 
         elif method == "rolling_mean":
             df_filled = df.copy()
-            for col in self.target_columns:
+            for col in cols_to_process:
                 mask = df_filled[col].isnull()
                 df_filled[col] = df_filled[col].fillna(
                     df_filled[col].rolling(
@@ -148,7 +161,7 @@ class TimeSeriesPreprocessor:
             # First forward fill
             df_filled = df.fillna(method="ffill", limit=12)
             # Then rolling mean for remaining
-            for col in self.target_columns:
+            for col in cols_to_process:
                 mask = df_filled[col].isnull()
                 df_filled[col] = df_filled[col].fillna(
                     df_filled[col].rolling(
@@ -158,19 +171,13 @@ class TimeSeriesPreprocessor:
                     ).mean()
                 )
 
-        else:
-            raise ValueError(
-                f"Unknown method: {method}. "
-                f"Use 'forward_fill', 'rolling_mean', or 'both'"
-            )
-
-        final_missing = df_filled[self.target_columns].isnull().sum()
+        final_missing = df_filled[cols_to_process].isnull().sum()
         self.missing_value_stats["after"] = final_missing.to_dict()
         self.missing_value_stats["method"] = method
 
-        print(f"✓ Handled missing values using '{method}' method")
-        print(f"  Before: {initial_missing.sum()} missing values")
-        print(f"  After: {final_missing.sum()} missing values")
+        logger.debug(f"Handled missing values using '{method}' method")
+        logger.debug(f"  Before: {initial_missing.sum()} missing values")
+        logger.debug(f"  After: {final_missing.sum()} missing values")
 
         return df_filled
 
@@ -232,12 +239,11 @@ class TimeSeriesPreprocessor:
             }
 
             # Replace outliers with rolling median
-            df.loc[is_outlier, col] = df.loc[is_outlier, col].rolling(
-                window=5, center=True, min_periods=1
-            ).median()
+            rolling_median = df[col].rolling(window=5, center=True, min_periods=1).median()
+            df.loc[is_outlier, col] = rolling_median[is_outlier]
 
         total_outliers = sum(s["count"] for s in outlier_stats.values())
-        print(f"✓ Removed/fixed {total_outliers} outliers using '{method}'")
+        logger.debug(f"Removed/fixed {total_outliers} outliers using '{method}'")
 
         return df, outlier_stats
 
@@ -269,7 +275,7 @@ class TimeSeriesPreprocessor:
                 df[lag_col_name] = df[col].shift(lag)
 
         n_lag_cols = len(self.target_columns) * len(lag_hours)
-        print(f"✓ Created {n_lag_cols} lag features: {lag_hours}h")
+        logger.debug(f"Created {n_lag_cols} lag features: {lag_hours}h")
 
         return df
 
@@ -310,9 +316,63 @@ class TimeSeriesPreprocessor:
                 ).std()
 
         n_rolling_cols = len(self.target_columns) * len(windows) * 2
-        print(f"✓ Created {n_rolling_cols} rolling statistics: {windows}h windows")
+        logger.debug(f"Created {n_rolling_cols} rolling statistics: {windows}h windows")
 
         return df
+
+    def prepare_features(
+        self,
+        df: pd.DataFrame,
+        target_col: Optional[str] = None,
+        lag_hours: Optional[List[int]] = None,
+        rolling_windows: Optional[List[int]] = None,
+    ) -> pd.DataFrame:
+        """
+        Prepare features for XGBoost modeling.
+
+        Creates lag features and rolling statistics for the given target column.
+
+        Args:
+            df: Input DataFrame (must have datetime index or datetime column)
+            target_col: Target column name (default: first target_column)
+            lag_hours: List of lag hours (default: [1, 3, 6])
+            rolling_windows: List of rolling windows (default: [3, 6])
+
+        Returns:
+            DataFrame with lag and rolling features added
+
+        Raises:
+            ValueError: If target_col doesn't exist in DataFrame
+        """
+        if lag_hours is None:
+            lag_hours = [1, 3, 6]
+        if rolling_windows is None:
+            rolling_windows = [3, 6]
+
+        # Use provided target_col or first target column
+        col_to_use = target_col or (self.target_columns[0] if self.target_columns else None)
+        
+        if col_to_use is None:
+            raise ValueError("No target column specified and no default target columns set")
+        
+        if col_to_use not in df.columns:
+            raise ValueError(f"Target column '{col_to_use}' not found in DataFrame")
+
+        # Temporarily set target_columns to just the requested column for feature creation
+        original_target = self.target_columns
+        self.target_columns = [col_to_use]
+
+        try:
+            # Create lag features
+            df = self.create_lag_features(df, lag_hours)
+            
+            # Create rolling statistics
+            df = self.create_rolling_statistics(df, rolling_windows)
+            
+            return df
+        finally:
+            # Restore original target columns
+            self.target_columns = original_target
 
     def preprocess(
         self,
@@ -386,7 +446,7 @@ class TimeSeriesPreprocessor:
             df = df.dropna()
             final_rows = len(df)
             dropped = initial_rows - final_rows
-            print(f"✓ Dropped {dropped} rows with NaN (after feature creation)")
+            logger.debug(f"Dropped {dropped} rows with NaN (after feature creation)")
 
         # Summary statistics
         print("\n" + "=" * 60)

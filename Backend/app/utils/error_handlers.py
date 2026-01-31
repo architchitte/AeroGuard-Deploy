@@ -6,6 +6,8 @@ Centralized error handling for the Flask application.
 
 from flask import jsonify
 from werkzeug.exceptions import HTTPException
+from datetime import datetime
+import uuid
 
 
 class AeroGuardException(Exception):
@@ -60,62 +62,84 @@ def register_error_handlers(app):
         app: Flask application instance
     """
 
+    # Mapping of HTTP status codes to error code names
+    ERROR_CODES = {
+        400: "BAD_REQUEST",
+        401: "UNAUTHORIZED",
+        403: "FORBIDDEN",
+        404: "NOT_FOUND",
+        405: "METHOD_NOT_ALLOWED",
+        409: "CONFLICT",
+        422: "UNPROCESSABLE_ENTITY",
+        429: "TOO_MANY_REQUESTS",
+        500: "INTERNAL_SERVER_ERROR",
+        502: "BAD_GATEWAY",
+        503: "SERVICE_UNAVAILABLE",
+    }
+
+    def _make_error_response(error_code, message, status_code):
+        """Helper to create consistent error responses."""
+        return jsonify({
+            "error": error_code,
+            "message": message,
+            "status": status_code,
+            "timestamp": datetime.now().isoformat(),
+        }), status_code
+
     @app.errorhandler(AeroGuardException)
     def handle_aeroguard_exception(error):
         """Handle custom AeroGuard exceptions."""
-        response = {
-            "status": "error",
-            "message": error.message,
-            "code": error.status_code,
-        }
-        return jsonify(response), error.status_code
+        error_code = ERROR_CODES.get(error.status_code, "ERROR")
+        return _make_error_response(error_code, error.message, error.status_code)
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(error):
         """Handle validation errors."""
-        response = {
-            "status": "error",
-            "message": error.message,
-            "code": 400,
-        }
-        return jsonify(response), 400
+        return _make_error_response("BAD_REQUEST", error.message, 400)
 
     @app.errorhandler(400)
     def handle_bad_request(error):
         """Handle bad request errors."""
-        response = {
-            "status": "error",
-            "message": "Bad request",
-            "code": 400,
-        }
-        return jsonify(response), 400
+        message = "Bad request"
+        if hasattr(error, 'description'):
+            message = str(error.description)
+        return _make_error_response("BAD_REQUEST", message, 400)
 
     @app.errorhandler(404)
     def handle_not_found(error):
         """Handle not found errors."""
-        response = {
-            "status": "error",
-            "message": "Resource not found",
-            "code": 404,
-        }
-        return jsonify(response), 404
+        return _make_error_response("NOT_FOUND", "Resource not found", 404)
+
+    @app.errorhandler(405)
+    def handle_method_not_allowed(error):
+        """Handle method not allowed errors."""
+        # Try to extract the allowed methods and HTTP method from the error
+        message = "Method not allowed"
+        if hasattr(error, 'description') and error.description:
+            # Description format is usually like "Method GET. Not Allowed"
+            description = str(error.description)
+            # Try to extract HTTP method name from the request
+            from flask import request
+            method = request.method
+            if method:
+                message = f"Method {method} not allowed"
+            else:
+                message = description
+        return _make_error_response("METHOD_NOT_ALLOWED", message, 405)
 
     @app.errorhandler(500)
     def handle_internal_error(error):
         """Handle internal server errors."""
-        response = {
-            "status": "error",
-            "message": "Internal server error",
-            "code": 500,
-        }
-        return jsonify(response), 500
+        return _make_error_response("INTERNAL_SERVER_ERROR", "Internal server error", 500)
 
     @app.errorhandler(Exception)
     def handle_generic_exception(error):
         """Handle all unhandled exceptions."""
-        response = {
-            "status": "error",
-            "message": "An unexpected error occurred",
-            "code": 500,
-        }
-        return jsonify(response), 500
+        # Check if it's an HTTP exception
+        if isinstance(error, HTTPException):
+            status_code = error.code if hasattr(error, 'code') else 500
+            error_code = ERROR_CODES.get(status_code, "ERROR")
+            message = str(error.description) if hasattr(error, 'description') else str(error)
+            return _make_error_response(error_code, message, status_code)
+        
+        return _make_error_response("INTERNAL_SERVER_ERROR", "An unexpected error occurred", 500)

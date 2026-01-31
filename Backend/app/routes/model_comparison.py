@@ -212,6 +212,7 @@ def quick_compare():
             }), 400
         
         data = request.json.get('data')
+        columns = request.json.get('columns', None)
         target_col = request.json.get('target_col', 'PM2.5')
         
         if not data:
@@ -225,8 +226,18 @@ def quick_compare():
         try:
             if isinstance(data, dict):
                 df = pd.DataFrame(data)
+            elif columns:
+                # data is a list of lists with separate columns spec
+                df = pd.DataFrame(data, columns=columns)
             else:
-                df = pd.DataFrame(data)
+                # If no columns provided, assume default: date, PM2.5, PM10 or infer from length
+                # If we have 3 columns, assume date, PM2.5, PM10
+                if len(data) > 0 and len(data[0]) == 3:
+                    columns = ['date', 'PM2.5', 'PM10']
+                    df = pd.DataFrame(data, columns=columns)
+                else:
+                    # Try to infer - assume list of lists
+                    df = pd.DataFrame(data)
         except Exception as e:
             return jsonify({
                 "status": "error",
@@ -238,6 +249,8 @@ def quick_compare():
         try:
             preprocessor = TimeSeriesPreprocessor()
             df = preprocessor.prepare_features(df, target_col=target_col)
+            # Drop rows with NaN (from lag/rolling features)
+            df = df.dropna()
         except Exception as e:
             logger.warning(f"Could not preprocess data for XGBoost: {str(e)}")
         
@@ -247,7 +260,15 @@ def quick_compare():
             'XGBoost': XGBoostModel()
         })
         
-        result = selector.select_best(df, target_col=target_col)
+        try:
+            result = selector.select_best(df, target_col=target_col)
+        except Exception as e:
+            logger.error(f"Error in quick_compare: {str(e)}")
+            return jsonify({
+                "status": "error",
+                "message": str(e),
+                "code": 500
+            }), 500
         
         response = {
             "status": "success",

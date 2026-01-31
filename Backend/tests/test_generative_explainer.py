@@ -27,8 +27,8 @@ class TestLLMConfiguration:
         """Test default configuration values."""
         config = LLMConfiguration()
         
-        assert config.provider == APIProvider.OPENAI
-        assert config.model == "gpt-3.5-turbo"
+        assert config.provider == APIProvider.GEMINI
+        assert config.model == "gemini-pro"
         assert config.temperature == 0.7
         assert config.max_tokens == 500
         assert config.use_fallback == True
@@ -37,20 +37,20 @@ class TestLLMConfiguration:
         """Test custom configuration."""
         config = LLMConfiguration(
             api_key="test-key",
-            model="gpt-4",
+            model="gemini-pro",
             temperature=0.5,
             max_tokens=1000
         )
         
         assert config.api_key == "test-key"
-        assert config.model == "gpt-4"
+        assert config.model == "gemini-pro"
         assert config.temperature == 0.5
         assert config.max_tokens == 1000
     
     def test_is_configured_with_api_key(self):
         """Test is_configured with valid API key."""
         config = LLMConfiguration(
-            provider=APIProvider.OPENAI,
+            provider=APIProvider.GEMINI,
             api_key="test-key"
         )
         
@@ -58,7 +58,7 @@ class TestLLMConfiguration:
     
     def test_is_configured_without_api_key(self):
         """Test is_configured without API key."""
-        config = LLMConfiguration(provider=APIProvider.OPENAI)
+        config = LLMConfiguration(provider=APIProvider.GEMINI)
         
         assert config.is_configured() == False
     
