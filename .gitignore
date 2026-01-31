@@ -11,6 +11,11 @@ ENV/
 # =========================
 node_modules/
 frontend/node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+package.json
+.gitignore
 
 dist/
 frontend/dist/
