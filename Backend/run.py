@@ -34,6 +34,12 @@ import os
 import sys
 import logging
 
+# Load environment variables from .env file BEFORE importing Flask
+from dotenv import load_dotenv
+import pathlib
+env_path = pathlib.Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
 # Configure logging before importing Flask
 logging.basicConfig(
     level=logging.INFO,

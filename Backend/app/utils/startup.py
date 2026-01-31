@@ -166,7 +166,8 @@ def _check_configuration():
         from app.config import Config, DevelopmentConfig, ProductionConfig
 
         # Test that config classes have required attributes
-        required_attrs = ["ENV", "DEBUG", "FLASK_ENV"]
+        # ENV is the Flask attribute name (uses FLASK_ENV env var internally)
+        required_attrs = ["ENV", "DEBUG"]
         for config_class in [Config, DevelopmentConfig, ProductionConfig]:
             for attr in required_attrs:
                 if not hasattr(config_class, attr):
