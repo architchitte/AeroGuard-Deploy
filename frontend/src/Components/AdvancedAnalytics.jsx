@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area
 } from "recharts";
 import {
-    BrainCircuit, TrendingUp, AlertTriangle, Activity, Database, CheckCircle, Calendar, Clock, BarChart3, Wind
+    BrainCircuit, TrendingUp, AlertTriangle, Activity, Database, CheckCircle, Calendar, Clock, BarChart3, Wind, Server, Wifi, WifiOff
 } from "lucide-react";
+import { analyticsService } from "../api/analyticsService";
 
 // --- MOCK DATA ---
 
@@ -75,11 +76,76 @@ export default function AdvancedAnalytics() {
     const [forecastHorizon, setForecastHorizon] = useState(6);
     const [selectedPollutant, setSelectedPollutant] = useState('pm25');
 
-    const historyData = useMemo(() => generateHistoryData(timeRange), [timeRange]);
-    const metrics = MODEL_METRICS[forecastHorizon];
+    // Backend Integration State
+    const [backendStatus, setBackendStatus] = useState('checking');
+    const [availableModels, setAvailableModels] = useState([]);
+
+    // Data State
+    const [historyData, setHistoryData] = useState([]);
+    const [metrics, setMetrics] = useState({
+        sarima: { prediction: 0, mae: 0, rmse: 0, r2: 0, uncertainty: 0 },
+        xgboost: { prediction: 0, mae: 0, rmse: 0, r2: 0, uncertainty: 0 },
+        hybrid: { prediction: 0, mae: 0, rmse: 0, r2: 0, uncertainty: 0 }
+    });
+    const [featureImportance, setFeatureImportance] = useState([]);
+    const [pollutantComposition, setPollutantComposition] = useState([]);
+
+    // 1. Initial System Check
+    useEffect(() => {
+        const init = async () => {
+            const health = await analyticsService.checkHealth();
+            setBackendStatus(health.status === 'healthy' ? 'online' : 'offline');
+
+            const models = await analyticsService.getAvailableModels();
+            setAvailableModels(models);
+
+            const composition = await analyticsService.getPollutantComposition();
+            setPollutantComposition(composition);
+
+            const features = await analyticsService.getFeatureImportance();
+            setFeatureImportance(features);
+        };
+        init();
+    }, []);
+
+    // 2. Fetch History when timeRange changes
+    useEffect(() => {
+        const fetchHistory = async () => {
+            const data = await analyticsService.getHistoricalAnalysis(timeRange);
+            setHistoryData(data);
+        };
+        fetchHistory();
+    }, [timeRange]);
+
+    // 3. Fetch Metrics when horizon changes
+    useEffect(() => {
+        const fetchMetrics = async () => {
+            const data = await analyticsService.getModelMetrics(forecastHorizon);
+            setMetrics(data);
+        };
+        fetchMetrics();
+    }, [forecastHorizon]);
 
     return (
         <div className="w-full space-y-8 text-slate-300">
+
+            {/* Backend Status Indicator */}
+            <div className="flex justify-end items-center gap-2 text-xs mb-4">
+                <span className="text-slate-500">Analytics Engine:</span>
+                {backendStatus === 'online' ? (
+                    <span className="flex items-center gap-1.5 text-green-400 font-bold bg-green-500/10 px-2.5 py-1 rounded-full border border-green-500/20">
+                        <Wifi size={12} /> ONLINE
+                    </span>
+                ) : backendStatus === 'checking' ? (
+                    <span className="flex items-center gap-1.5 text-yellow-400 font-bold bg-yellow-500/10 px-2.5 py-1 rounded-full border border-yellow-500/20 animate-pulse">
+                        <Activity size={12} /> CONNECTING...
+                    </span>
+                ) : (
+                    <span className="flex items-center gap-1.5 text-red-400 font-bold bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20">
+                        <WifiOff size={12} /> OFFLINE (Demo Mode)
+                    </span>
+                )}
+            </div>
 
             {/* 1. CHART: Historical Trends */}
             <div className="glass-panel p-6 rounded-3xl border border-white/10">
@@ -117,7 +183,7 @@ export default function AdvancedAnalytics() {
                     </div>
                 </div>
 
-                <div className="h-[300px] w-full">
+                <div style={{ width: '100%', height: 300 }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={historyData}>
                             <defs>
@@ -219,9 +285,9 @@ export default function AdvancedAnalytics() {
                     <h3 className="text-md font-bold text-white mb-6 flex items-center gap-2">
                         <Activity size={18} className="text-pink-400" /> Explainable AI (XAI)
                     </h3>
-                    <div className="h-[250px]">
+                    <div style={{ width: '100%', height: 250 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={FEATURE_IMPORTANCE} margin={{ left: 40 }}>
+                            <BarChart layout="vertical" data={featureImportance} margin={{ left: 40 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="feature" type="category" width={100} tick={{ fill: '#94a3b8', fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -240,17 +306,17 @@ export default function AdvancedAnalytics() {
 
                     {/* Breakdown */}
                     <div className="glass-panel p-5 rounded-3xl border border-white/10 flex items-center gap-6">
-                        <div className="h-32 w-32 shrink-0">
+                        <div style={{ width: 128, height: 128, flexShrink: 0 }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
-                                        data={POLLUTANT_COMPOSITION}
+                                        data={pollutantComposition}
                                         innerRadius={30}
                                         outerRadius={50}
                                         paddingAngle={5}
                                         dataKey="value"
                                     >
-                                        {POLLUTANT_COMPOSITION.map((entry, index) => (
+                                        {pollutantComposition.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} stroke="rgba(0,0,0,0.5)" />
                                         ))}
                                     </Pie>
@@ -260,7 +326,7 @@ export default function AdvancedAnalytics() {
                         <div className="flex-1 space-y-2">
                             <h4 className="text-sm font-bold text-white">Pollutant Ratios</h4>
                             <div className="grid grid-cols-2 gap-2">
-                                {POLLUTANT_COMPOSITION.map(p => (
+                                {pollutantComposition.map(p => (
                                     <div key={p.name} className="flex items-center gap-2 text-xs text-slate-400">
                                         <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
                                         <span>{p.name} ({p.value}%)</span>
@@ -288,8 +354,8 @@ export default function AdvancedAnalytics() {
 
                                 {/* Rows */}
                                 {DAYS.map((day, dIndex) => (
-                                    <>
-                                        <div key={`day-${day}`} className="text-[10px] text-slate-400 font-medium py-1">{day}</div>
+                                    <React.Fragment key={day}>
+                                        <div className="text-[10px] text-slate-400 font-medium py-1">{day}</div>
                                         {HEATMAP_DATA[dIndex].map((intensity, hIndex) => (
                                             <div
                                                 key={`${day}-${hIndex}`}
@@ -297,7 +363,7 @@ export default function AdvancedAnalytics() {
                                                 title={`${day} ${TIME_SLOTS[hIndex]}: Level ${intensity}`}
                                             />
                                         ))}
-                                    </>
+                                    </React.Fragment>
                                 ))}
                             </div>
                         </div>

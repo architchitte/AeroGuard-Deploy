@@ -29,16 +29,11 @@ class RealtimeAQIService:
     def get_city_aqi(self, city: str) -> Optional[Dict[str, Any]]:
         """
         Fetch real-time AQI data for a specific city.
-
-        Args:
-            city: City name (e.g., 'Delhi', 'Mumbai', 'Bangalore')
-
-        Returns:
-            Dictionary with AQI data or None if request fails
+        Falls back to Mock Data if API fails or is unconfigured.
         """
         if not self.api_key:
-            logger.error("API key not configured")
-            return None
+            logger.warning("API key not configured, returning MOCK data.")
+            return self._get_mock_data(city)
 
         try:
             url = f"{self.base_url}/feed/{city}/?token={self.api_key}"
@@ -49,26 +44,17 @@ class RealtimeAQIService:
 
             if data.get('status') != 'ok':
                 logger.warning(f"API returned non-ok status for {city}: {data.get('data')}")
-                return None
+                return self._get_mock_data(city)
 
-                return self._parse_aqi_data(data.get('data', {}))
+            return self._parse_aqi_data(data.get('data', {}))
 
         except Exception as e:
             logger.error(f"Failed to fetch AQI for {city}: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Error parsing AQI data for {city}: {str(e)}")
-            return None
+            return self._get_mock_data(city)
 
     def get_multiple_cities_aqi(self, cities: List[str]) -> Dict[str, Optional[Dict[str, Any]]]:
         """
         Fetch real-time AQI data for multiple cities.
-
-        Args:
-            cities: List of city names
-
-        Returns:
-            Dictionary mapping city names to their AQI data
         """
         results = {}
         for city in cities:
@@ -80,17 +66,9 @@ class RealtimeAQIService:
     ) -> Optional[Dict[str, Any]]:
         """
         Fetch AQI data for a specific location by coordinates.
-
-        Args:
-            latitude: Location latitude
-            longitude: Location longitude
-
-        Returns:
-            Dictionary with AQI data or None if request fails
         """
         if not self.api_key:
-            logger.error("API key not configured")
-            return None
+             return self._get_mock_data(f"Loc ({latitude:.2f}, {longitude:.2f})")
 
         try:
             url = f"{self.base_url}/feed/geo:{latitude};{longitude}/?token={self.api_key}"
@@ -100,26 +78,41 @@ class RealtimeAQIService:
             data = response.json()
 
             if data.get('status') != 'ok':
-                logger.warning(
-                    f"API returned non-ok status for coordinates "
-                    f"({latitude}, {longitude}): {data.get('data')}"
-                )
-                return None
+                return self._get_mock_data(f"Loc ({latitude:.2f}, {longitude:.2f})")
 
             return self._parse_aqi_data(data.get('data', {}))
 
-        except requests.exceptions.RequestException as e:
-            logger.error(
-                f"Failed to fetch AQI data for coordinates "
-                f"({latitude}, {longitude}): {str(e)}"
-            )
-            return None
         except Exception as e:
-            logger.error(
-                f"Error parsing AQI data for coordinates "
-                f"({latitude}, {longitude}): {str(e)}"
-            )
-            return None
+            logger.error(f"Failed to fetch AQI for coords: {e}")
+            return self._get_mock_data(f"Loc ({latitude:.2f}, {longitude:.2f})")
+
+    def _get_mock_data(self, city_name: str) -> Dict[str, Any]:
+        """Generate realistic mock data when API is unavailable."""
+        import random
+        
+        # Deterministic random based on city name to keep it consistent-ish
+        random.seed(city_name)
+        
+        base_aqi = random.randint(50, 300)
+        
+        return {
+            'city': city_name,
+            'aqi': base_aqi,
+            'latitude': 28.61 if 'Delhi' in city_name else 19.07, 
+            'longitude': 77.20 if 'Delhi' in city_name else 72.87,
+            'pollutants': {
+                'PM2.5': base_aqi * 0.6,
+                'PM10': base_aqi * 0.8,
+                'NO2': random.randint(10, 80),
+                'O3': random.randint(10, 60),
+                'SO2': random.randint(5, 30),
+                'CO': random.uniform(0.5, 2.0),
+            },
+            'url': 'https://aeroguard.demo',
+            'last_updated': datetime.now().isoformat(),
+            'source': 'AeroGuard Simulation Engine',
+            'is_mock': True
+        }
 
     @staticmethod
     def _parse_aqi_data(data: Dict[str, Any]) -> Dict[str, Any]:
