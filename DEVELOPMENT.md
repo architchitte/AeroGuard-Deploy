@@ -70,18 +70,61 @@ JSON Response
 ## Development Setup
 
 ### Initial Setup
-```bash
+
+#### On Windows (PowerShell):
+```powershell
 # 1. Create virtual environment
 python -m venv venv
-source venv/Scripts/activate  # Windows
 
-# 2. Install dependencies
+# 2. Activate virtual environment (PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# If you get an execution policy error, run:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 3. Create .env file
+# 4. Create .env file
+Copy-Item .env.example .env
+
+# 5. Run application
+python run.py
+```
+
+#### On Windows (Command Prompt):
+```cmd
+# 1. Create virtual environment
+python -m venv venv
+
+# 2. Activate virtual environment (Command Prompt)
+venv\Scripts\activate.bat
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Create .env file
+copy .env.example .env
+
+# 5. Run application
+python run.py
+```
+
+#### On macOS/Linux (Bash):
+```bash
+# 1. Create virtual environment
+python3 -m venv venv
+
+# 2. Activate virtual environment
+source venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Create .env file
 cp .env.example .env
 
-# 4. Run application
+# 5. Run application
 python run.py
 ```
 
