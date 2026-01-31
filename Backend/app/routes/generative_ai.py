@@ -1,7 +1,8 @@
 """
 Generative AI API Routes
 
-Endpoints for generating human-readable AI insights and explanations.
+Endpoints for generating human-readable AI insights and explanations
+based on REAL AQI data.
 """
 
 from flask import Blueprint, jsonify, request, current_app
@@ -15,106 +16,164 @@ from app.services.generative_explainer import (
     APIProvider
 )
 
+from app.services.realtime_aqi_service import RealtimeAQIService
+
 logger = logging.getLogger(__name__)
 
 bp = Blueprint("generative_ai", __name__, url_prefix="/api/v1/ai")
+
+
+# =====================================================
+# AI BRIEFING (REAL AQI → AI EXPLANATION)
+# =====================================================
 
 @bp.route("/briefing", methods=["GET"])
 def get_ai_briefing():
     """
     Get a personalized AI-powered health briefing.
-    
+
     Query Parameters:
-        city: City name
-        persona: User persona (e.g., 'outdoor_athlete', 'child', 'elderly')
+        city: City name (required)
+        persona: general_public | elderly | athletes | children
     """
     try:
-        city = request.args.get('city', 'Mumbai')
-        persona = request.args.get('persona', 'general_public')
-        
-        # In a real app, we'd fetch actual real-time data for this city
-        # For now, let's pretend we have data or use a fallback.
-        # Let's try to get data if available (e.g. from our earlier trained city Mumbai)
-        
-        aqi_value = 156 # Default mock
-        trend = "rising"
-        factors = ["PM2.5", "Evening Traffic", "Stagnant Air"]
-        duration = "temporary"
-        
-        # If the city is Mumbai, maybe we can be more specific
-        if city.lower() == 'mumbai':
-            aqi_value = 156
-            factors = ["Nitrogen Dioxide (NO2)", "Evening Traffic", "Industrial Exhaust"]
-        
-        # Initialize Explainer
-        api_key = current_app.config.get('GEMINI_API_KEY')
-        if not api_key or api_key == 'your-gemini-api-key-here':
-            # Try to get from environment
-            api_key = os.environ.get('GEMINI_API_KEY')
-            
-        explainer = create_generative_explainer(
-            api_key=api_key if api_key and api_key != 'your-gemini-api-key-here' else None,
-            provider=APIProvider.GEMINI if api_key and api_key != 'your-gemini-api-key-here' else APIProvider.TEMPLATE
+        city = request.args.get("city")
+        persona = request.args.get("persona", "general_public")
+
+        if not city:
+            return jsonify({
+                "status": "error",
+                "message": "City parameter is required"
+            }), 400
+
+        # ===============================
+        # 1️⃣ FETCH REAL AQI DATA
+        # ===============================
+        aqi_service = RealtimeAQIService()
+        aqi_data = aqi_service.get_city_aqi(city)
+
+        if not aqi_data or "aqi" not in aqi_data:
+            return jsonify({
+                "status": "error",
+                "message": f"Could not fetch AQI for {city}"
+            }), 404
+
+        aqi_value = aqi_data["aqi"]
+
+        # ===============================
+        # 2️⃣ DERIVE CONTEXT (LOGIC)
+        # ===============================
+
+        # Trend heuristic
+        if aqi_value >= 150:
+            trend = "rising"
+        elif aqi_value <= 80:
+            trend = "falling"
+        else:
+            trend = "stable"
+
+        # Duration heuristic
+        duration = "persistent" if aqi_value >= 120 else "temporary"
+
+        # Main pollutants
+        pollutants = aqi_data.get("pollutants", {})
+        main_factors = list(pollutants.keys())[:3] if pollutants else ["Traffic emissions"]
+
+        # ===============================
+        # 3️⃣ INIT GENERATIVE EXPLAINER
+        # ===============================
+        api_key = (
+            current_app.config.get("GEMINI_API_KEY")
+            or os.environ.get("GEMINI_API_KEY")
         )
-        
-        # Generate explanation
+
+        explainer = create_generative_explainer(
+            api_key=api_key if api_key else None,
+            provider=APIProvider.GEMINI if api_key else APIProvider.TEMPLATE
+        )
+
+        # ===============================
+        # 4️⃣ GENERATE AI EXPLANATION
+        # ===============================
         explanation_obj = explainer.generate_explanation(
             aqi_value=aqi_value,
             trend=trend,
-            main_factors=factors,
+            main_factors=main_factors,
             duration=duration,
             persona=persona,
             style=ExplanationStyle.CASUAL
         )
-        
+
+        # ===============================
+        # 5️⃣ RESPONSE
+        # ===============================
         return jsonify({
             "status": "success",
             "city": city,
+            "aqi": aqi_value,
             "persona": persona,
-            "data": explanation_obj.to_dict()
+            "data": explanation_obj.to_dict(),
+            "timestamp": datetime.utcnow().isoformat()
         }), 200
 
     except Exception as e:
-        logger.error(f"Error generating AI briefing: {str(e)}")
+        logger.error(f"AI briefing error: {str(e)}")
         return jsonify({
             "status": "error",
-            "message": f"Failed to generate AI briefing: {str(e)}",
+            "message": "Failed to generate AI briefing"
         }), 500
+
+
+# =====================================================
+# AI FORECAST EXPLANATION (UNCHANGED)
+# =====================================================
 
 @bp.route("/explain-forecast", methods=["POST"])
 def explain_forecast():
     """
-    Explain a complex forecast using AI.
+    Explain a complex AQI forecast using AI.
     """
     try:
         data = request.get_json()
-        if not data or 'forecast' not in data:
+
+        if not data:
             return jsonify({
                 "status": "error",
-                "message": "Missing forecast data"
+                "message": "Missing request body"
             }), 400
-            
-        # Extract details for the prompt
-        aqi_value = data.get('aqi_value', 100)
-        trend = data.get('trend', 'stable')
-        factors = data.get('factors', ['Weather patterns'])
-        persona = data.get('persona', 'general_public')
-        
-        api_key = current_app.config.get('GEMINI_API_KEY')
-        explainer = create_generative_explainer(api_key=api_key if api_key and api_key != 'your-gemini-api-key-here' else None)
-        
+
+        aqi_value = data.get("aqi_value", 100)
+        trend = data.get("trend", "stable")
+        factors = data.get("factors", ["Weather patterns"])
+        persona = data.get("persona", "general_public")
+
+        api_key = (
+            current_app.config.get("GEMINI_API_KEY")
+            or os.environ.get("GEMINI_API_KEY")
+        )
+
+        explainer = create_generative_explainer(
+            api_key=api_key if api_key else None,
+            provider=APIProvider.GEMINI if api_key else APIProvider.TEMPLATE
+        )
+
         explanation = explainer.generate_explanation(
             aqi_value=aqi_value,
             trend=trend,
             main_factors=factors,
             duration="persistent",
-            persona=persona
+            persona=persona,
+            style=ExplanationStyle.CASUAL
         )
-        
+
         return jsonify({
             "status": "success",
             "data": explanation.to_dict()
         }), 200
-        
+
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        logger.error(f"Forecast explanation error: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": "Failed to explain forecast"
+        }), 500
