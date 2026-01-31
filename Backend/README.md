@@ -1,3 +1,4 @@
+<<<<<<<< HEAD:Backend/README.md
 # AeroGuard
 
 **Air Quality Forecasting System with Machine Learning**
@@ -568,3 +569,5 @@ For issues and questions:
 ---
 
 **Built with ❤️ for clean air**
+========
+>>>>>>>> 8c54ff8f4b221926af47f7c98e54f66361c00e5d:README.md
