@@ -6,6 +6,7 @@ import {
     BrainCircuit, TrendingUp, AlertTriangle, Activity, Database, CheckCircle, Calendar, Clock, BarChart3, Wind, Server, Wifi, WifiOff
 } from "lucide-react";
 import { analyticsService } from "../api/analyticsService";
+import AeroIntelligenceBriefing from "./AeroIntelligenceBriefing";
 
 // --- MOCK DATA ---
 
@@ -146,6 +147,9 @@ export default function AdvancedAnalytics() {
                     </span>
                 )}
             </div>
+
+            {/* AI Powered Insights Briefing */}
+            <AeroIntelligenceBriefing city="Mumbai" persona="outdoor_athlete" />
 
             {/* 1. CHART: Historical Trends */}
             <div className="glass-panel p-6 rounded-3xl border border-white/10">

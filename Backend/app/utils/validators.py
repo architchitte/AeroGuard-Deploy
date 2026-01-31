@@ -34,8 +34,8 @@ class InputValidator:
         if len(location_id) > 100:
             return False, "Location ID cannot exceed 100 characters"
 
-        if not re.match(r"^[a-zA-Z0-9_-]+$", location_id):
-            return False, "Location ID can only contain alphanumeric characters, hyphens, and underscores"
+        if not re.match(r"^[a-zA-Z0-9\s,._%+-]+$", location_id):
+            return False, "Location ID can only contain alphanumeric characters, spaces, commas, dots, and common URL symbols"
 
         return True, ""
 

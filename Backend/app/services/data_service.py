@@ -81,7 +81,7 @@ class DataService:
         if len(location_id) > 100:
             return False, "Location ID too long"
 
-        if not location_id.replace("_", "").replace("-", "").isalnum():
+        if not location_id.replace("_", "").replace("-", "").replace(" ", "").replace(",", "").replace("+", "").replace(".", "").replace("%", "").isalnum():
             return False, "Location ID contains invalid characters"
 
         return True, "Valid location"

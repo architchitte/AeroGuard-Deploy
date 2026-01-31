@@ -167,6 +167,7 @@ def _register_blueprints(app):
     """
     from app.routes import user as user_routes
     from app.routes import realtime_aqi as realtime_aqi_routes
+    from app.routes import generative_ai as generative_ai_routes
 
     blueprints = [
         (health.bp, "Health Check"),
@@ -175,6 +176,7 @@ def _register_blueprints(app):
         (model_comparison_bp, "Model Comparison"),
         (user_routes.bp, "User API"),
         (realtime_aqi_routes.bp, "Real-time AQI"),
+        (generative_ai_routes.bp, "Generative AI"),
     ]
 
     try:

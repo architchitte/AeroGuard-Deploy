@@ -15,6 +15,7 @@ import logging
 
 from app.models.sarima_model import SARIMAModel
 from app.models.xgboost_model import XGBoostModel
+from app.models.lstm_model import LSTMModel
 from app.utils.timeseries_preprocessor import TimeSeriesPreprocessor
 
 logger = logging.getLogger(__name__)
@@ -173,6 +174,8 @@ class ModelComparator:
             return self._train_predict_sarima(df_train, forecast_steps, target_col)
         elif model_name == "XGBoost":
             return self._train_predict_xgboost(df_train, forecast_steps, target_col)
+        elif model_name == "LSTM":
+            return self._train_predict_lstm(df_train, forecast_steps, target_col)
         else:
             raise ValueError(f"Unknown model type: {model_name}")
 
@@ -214,6 +217,20 @@ class ModelComparator:
                         columns=initial_features.columns),
             steps=forecast_steps,
         )
+        return preds
+
+    def _train_predict_lstm(
+        self,
+        df_train: pd.DataFrame,
+        forecast_steps: int,
+        target_col: str,
+    ) -> List[float]:
+        """Train LSTM and generate predictions."""
+        # Train LSTM
+        self.models["LSTM"].train(df_train, epochs=20, verbose=0)
+        
+        # Get predictions
+        preds = self.models["LSTM"].predict(df_train, steps=forecast_steps)
         return preds
 
     def compare_models(

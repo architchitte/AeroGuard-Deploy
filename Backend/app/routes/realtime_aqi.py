@@ -7,6 +7,7 @@ Endpoints for fetching real-time air quality data from India.
 from flask import Blueprint, jsonify, request
 from datetime import datetime
 import logging
+import os
 
 from app.services.realtime_aqi_service import (
     RealtimeAQIService,
@@ -206,6 +207,67 @@ def get_popular_cities_aqi():
         return jsonify({
             "status": "error",
             "message": f"Failed to fetch AQI data: {str(e)}",
+        }), 500
+
+
+@bp.route("/history/<city_name>", methods=["GET"])
+def get_city_history(city_name):
+    """Get historical AQI data for a city."""
+    try:
+        days = int(request.args.get('days', 7))
+        
+        # For Mumbai, we can serve some data from our CSV
+        if city_name.lower() == 'mumbai':
+            import pandas as pd
+            csv_path = 'India-Air-Quality-Dataset/Mumbai_AQI_Dataset.csv'
+            if os.path.exists(csv_path):
+                df = pd.read_csv(csv_path)
+                df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%y')
+                df = df.sort_values('Date', ascending=False).head(days)
+                
+                history = []
+                for _, row in df.iterrows():
+                    history.append({
+                        "date": row['Date'].strftime('%Y-%m-%d'),
+                        "aqi": int(row['AQI']),
+                        "pm25": float(row['PM2.5']),
+                        "pm10": float(row['PM10']),
+                        "no2": float(row['NO2']),
+                        "o3": float(row['O3'])
+                    })
+                return jsonify({
+                    "status": "success",
+                    "city": "Mumbai",
+                    "data": history[::-1] # Return in chronological order
+                }), 200
+
+        # Fallback: Mock data for other cities
+        import random
+        from datetime import timedelta
+        history = []
+        now = datetime.now()
+        for i in range(days, 0, -1):
+            date = now - timedelta(days=i)
+            history.append({
+                "date": date.strftime('%Y-%m-%d'),
+                "aqi": random.randint(50, 200),
+                "pm25": random.randint(30, 150),
+                "pm10": random.randint(50, 250),
+                "no2": random.randint(10, 60),
+                "o3": random.randint(5, 40)
+            })
+            
+        return jsonify({
+            "status": "success",
+            "city": city_name,
+            "data": history
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching history for {city_name}: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
         }), 500
 
 

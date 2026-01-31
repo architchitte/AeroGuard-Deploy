@@ -54,7 +54,7 @@ export const dashboardService = {
                 console.warn('Forecast API failed, using mock forecast', e);
                 // Generate mock forecast based on current AQI
                 const current = aqiData.aqi || 100;
-                forecastData = Array.from({ length: 6 }, (_, i) => ({
+                forecastData = Array.from({ length: 8 }, (_, i) => ({
                     time: new Date(Date.now() + i * 3600000).getHours() + ":00",
                     aqi: Math.max(0, Math.round(current + (Math.random() * 20 - 10))),
                     risk: 'Moderate' // Simplified
@@ -98,7 +98,7 @@ export const dashboardService = {
                     contributing_factors: ["PM2.5", "Traffic"],
                     context: "Real-time"
                 },
-                forecast_6h: forecastData.length > 0 ? forecastData.slice(0, 6).map(f => ({
+                forecast_8h: forecastData.length > 0 ? forecastData.slice(0, 8).map(f => ({
                     time: f.time || f.timestamp?.split('T')[1]?.slice(0, 5) || "12:00",
                     aqi: f.predicted_aqi || f.aqi,
                     risk: "N/A"
@@ -141,7 +141,7 @@ export const dashboardService = {
                     contributing_factors: ["Demo Mode"],
                     context: "Simulated"
                 },
-                forecast_6h: Array.from({ length: 6 }, (_, i) => ({
+                forecast_8h: Array.from({ length: 8 }, (_, i) => ({
                     time: new Date(Date.now() + i * 3600000).getHours() + ":00",
                     aqi: baseAQI + (Math.random() * 20 - 10),
                     risk: "High"
