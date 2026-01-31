@@ -13,9 +13,10 @@ AeroGuard/
 │   ├── config.py            # Environment-based settings
 │   ├── models/              # ML model implementations
 │   │   ├── forecast_model.py    # Sklearn ensemble (RF + XGBoost)
-│   │   └── sarima_model.py      # SARIMA time-series model
+│   │   ├── sarima_model.py      # SARIMA time-series model
+│   │   └── xgboost_model.py     # XGBoost gradient boosting model
 │   ├── services/            # Business logic layer
-│   │   ├── forecasting_service.py   # Forecast orchestration
+│   │   ├── forecasting_service.py   # Forecast orchestration (ensemble, SARIMA, XGBoost)
 │   │   ├── data_service.py          # Data retrieval
 │   │   └── data_preprocessing.py    # Data ingestion & preprocessing
 │   ├── routes/              # REST API endpoints
@@ -31,7 +32,9 @@ AeroGuard/
 ├── tests/                   # Test suite
 │   ├── test_api.py         # API integration tests
 │   ├── test_timeseries.py  # Time-series module tests
-│   └── test_sarima_model.py    # SARIMA model tests
+│   ├── test_sarima_model.py    # SARIMA model tests
+│   ├── test_xgboost_model.py   # XGBoost model tests
+│   └── test_forecasting_service_xgboost.py  # XGBoost service integration
 │
 ├── examples/               # Example scripts and sample data
 │   ├── timeseries_examples.py  # Time-series usage examples
@@ -41,12 +44,10 @@ AeroGuard/
 ├── docs/                   # Documentation
 │   ├── DEVELOPMENT.md      # Development guide
 │   ├── GETTING_STARTED.md  # Quick start guide
-│   ├── SETUP_SUMMARY.md    # Setup instructions
-│   ├── TIMESERIES_PREPROCESSING.md     # API reference
-│   ├── TIMESERIES_QUICK_REFERENCE.md   # Quick lookup
 │   ├── PROJECT_STRUCTURE.md    # Detailed structure
-│   ├── PROJECT_SUMMARY.py      # Project overview
-│   └── TIMESERIES_IMPLEMENTATION_SUMMARY.md
+│   ├── XGBOOST_MODEL.md        # XGBoost model documentation
+│   ├── TIMESERIES_PREPROCESSING.md     # Time-series preprocessing API
+│   └── TIMESERIES_QUICK_REFERENCE.md   # Quick lookup
 │
 ├── docker-compose.yml      # Docker Compose configuration
 ├── Dockerfile              # Container image definition
@@ -264,15 +265,56 @@ Air quality parameters supported by AeroGuard:
 ## 🤖 ML Models
 
 ### Supported Model Types
-- **Random Forest**: Robust ensemble method
-- **XGBoost**: Gradient boosting for high accuracy
-- **Ensemble**: Hybrid approach (RF + XGBoost averaged)
+- **Ensemble**: Hybrid approach (Random Forest + XGBoost averaged)
+- **SARIMA**: Seasonal Auto-Regressive Integrated Moving Average for statistical forecasting
+- **XGBoost**: Gradient boosting regression with lag-based features for short-term forecasting
+
+### Model Comparison
+
+| Model | Best For | Horizon | Training | Interpretability |
+|-------|----------|---------|----------|-----------------|
+| **Ensemble** | General purpose | Medium | Fast | Medium |
+| **SARIMA** | Seasonal patterns | 7-14 days | Slow | High |
+| **XGBoost** | Non-linear patterns | 6-48 hours | Very fast | Medium |
+
+### Model Usage
+
+#### Ensemble (Default)
+```python
+from app.services.forecasting_service import ForecastingService
+
+service = ForecastingService(model_type="ensemble")
+forecast = service.generate_forecast("location_id", days_ahead=7)
+```
+
+#### SARIMA (Statistical)
+```python
+import pandas as pd
+
+service = ForecastingService(model_type="sarima")
+historical_series = pd.Series(data, index=date_index)
+service.train_sarima(historical_series)
+forecast = service.generate_sarima_forecast("location_id", days_ahead=7)
+```
+
+#### XGBoost (Gradient Boosting)
+```python
+service = ForecastingService(model_type="xgboost")
+metrics = service.train_xgboost(preprocessed_df)
+forecast = service.generate_xgboost_forecast("location_id", days_ahead=7)
+```
 
 ### Model Features
-- Feature scaling with StandardScaler
-- Automatic data normalization
-- Feature importance analysis
-- Model persistence with joblib
+- **Feature scaling**: StandardScaler for ensemble models
+- **Time-series features**: Lag features and rolling statistics for XGBoost
+- **Data normalization**: Automatic preprocessing
+- **Feature importance**: Analyze model decisions
+- **Model persistence**: Save/load with joblib
+
+### Documentation
+- [XGBoost Model Guide](docs/XGBOOST_MODEL.md)
+- [SARIMA Implementation](docs/TIMESERIES_PREPROCESSING.md)
+- [Feature Engineering](docs/PROJECT_STRUCTURE.md)
 
 ## ⚙️ Configuration
 
