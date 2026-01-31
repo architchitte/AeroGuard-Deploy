@@ -7,7 +7,7 @@ Supports multiple model types: sklearn ensemble (ForecastModel), SARIMA, or XGBo
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Tuple, Optional, Literal
+from typing import Dict, List, Tuple, Optional, Literal, Any
 from app.models.forecast_model import ForecastModel
 from app.models.sarima_model import SARIMAModel
 from app.models.xgboost_model import XGBoostModel
@@ -73,26 +73,22 @@ class ForecastingService:
         historical_data: Optional[np.ndarray] = None,
     ) -> Dict:
         """
-        Generate air quality forecast using sklearn ensemble model (ForecastModel).
-
-        Args:
-            location_id: Identifier for the location
-            days_ahead: Number of days to forecast (1-30)
-            historical_data: Historical air quality data for context
-
-        Returns:
-            Dictionary with forecast results including predictions and confidence
+        Generate air quality forecast using sklearn ensemble model.
+        Falls back to intelligent mock data if no model is trained.
         """
         if not 1 <= days_ahead <= 30:
             raise ValueError("days_ahead must be between 1 and 30")
 
-        if self.model is None:
-            raise RuntimeError("No ensemble model configured")
+        # Fallback to mock data if model is not configured or not trained
+        if self.model is None or not getattr(self.model, 'is_trained', False):
+            logger.info(f"Model not ready for {location_id}, providing intelligent simulation.")
+            return self._generate_simulated_forecast(location_id, days_ahead)
 
         if historical_data is None:
             historical_data = self._get_mock_historical_data()
 
         # Prepare features for prediction
+        # ... existing logic ...
         features = self.preprocessor.prepare_features(historical_data, days_ahead)
 
         # Generate predictions for all supported parameters
@@ -123,27 +119,34 @@ class ForecastingService:
         self,
         location_id: str,
         days_ahead: int = 7,
-        historical_data: Optional[np.ndarray] = None,
+        historical_data: Optional[Any] = None,
     ) -> Dict:
         """
         Generate air quality forecast using SARIMA time-series model.
-
-        Args:
-            location_id: Identifier for the location
-            days_ahead: Number of days to forecast (1-30)
-            historical_data: Historical air quality data (hourly pandas Series preferred)
-
-        Returns:
-            Dictionary with forecast results including predictions and confidence
         """
         if not 1 <= days_ahead <= 30:
             raise ValueError("days_ahead must be between 1 and 30")
 
-        if self.sarima_model is None:
-            raise RuntimeError("SARIMA model not trained. Call `train_sarima()` first.")
+        # 1. Initialize/Train if needed
+        if self.sarima_model is None or self.sarima_model._results is None:
+            if historical_data is not None:
+                try:
+                    if isinstance(historical_data, np.ndarray):
+                        # Use AQI (first col in our DataService mapping)
+                        series = pd.Series(historical_data[:, 0])
+                    else:
+                        series = historical_data['AQI'] if 'AQI' in historical_data.columns else historical_data.iloc[:, 0]
+                    self.train_sarima(series)
+                except Exception as e:
+                    logger.warning(f"Auto-training SARIMA failed: {e}")
+                    return self._generate_simulated_forecast(location_id, days_ahead)
+            else:
+                return self._generate_simulated_forecast(location_id, days_ahead)
 
         # Convert days_ahead to hours for SARIMA (assumes hourly data)
-        forecast_hours = days_ahead * 24
+        # Actually, if we use daily data from CSV, we just use days_ahead as steps
+        s = self.sarima_model.seasonal_order[3]
+        forecast_steps = days_ahead * 24 if s == 24 else days_ahead
 
         forecasts = {}
         
@@ -151,9 +154,13 @@ class ForecastingService:
         # Generate forecast for each common parameter
         for parameter in ["pm25", "pm10", "aqi"]:
             try:
-                preds = self.sarima_model.predict(steps=forecast_hours)
-                # Aggregate hourly predictions to daily
-                daily_preds = self._aggregate_to_daily(preds, days_ahead)
+                preds = self.sarima_model.predict(steps=forecast_steps)
+                # Aggregate hourly predictions to daily if s=24
+                if s == 24:
+                    daily_preds = self._aggregate_to_daily(preds, days_ahead)
+                else:
+                    daily_preds = preds
+                
                 forecasts[parameter] = self._format_forecast(
                     np.array(daily_preds), parameter, days_ahead
                 )
@@ -200,41 +207,61 @@ class ForecastingService:
     ) -> Dict:
         """
         Generate air quality forecast using XGBoost regression model.
-
-        Args:
-            location_id: Identifier for the location
-            days_ahead: Number of days to forecast (1-30)
-            historical_data: Historical air quality DataFrame with features and target
-
-        Returns:
-            Dictionary with forecast results including predictions and confidence
         """
         if not 1 <= days_ahead <= 30:
             raise ValueError("days_ahead must be between 1 and 30")
 
-        if self.xgboost_model is None:
-            raise RuntimeError("XGBoost model not trained. Call `train_xgboost()` first.")
+        # 1. Initialize/Train model if needed
+        if self.xgboost_model is None or self.xgboost_model._model is None:
+            if historical_data is not None:
+                try:
+                    # Convert numpy array from DataService to DataFrame if needed
+                    if isinstance(historical_data, np.ndarray):
+                        # Expected columns: City,Date,AQI,PM2.5,PM10,NO2,SO2,CO,O3 (mapped to indices)
+                        # The Mumbai CSV has numeric columns starting from index 2
+                        df = pd.DataFrame(historical_data, columns=["AQI", "PM2.5", "PM10", "NO2", "SO2", "CO", "O3"])
+                        # Preprocess with lags
+                        from app.utils.timeseries_preprocessor import TimeSeriesPreprocessor
+                        preprocessor = TimeSeriesPreprocessor()
+                        df = preprocessor.prepare_features(df, target_col="AQI")
+                        self.train_xgboost(df, target_col="AQI")
+                    else:
+                        # historical_data is already a DF
+                        self.train_xgboost(historical_data)
+                except Exception as e:
+                    logger.warning(f"Auto-training XGBoost failed: {e}")
+                    return self._generate_simulated_forecast(location_id, days_ahead)
+            else:
+                return self._generate_simulated_forecast(location_id, days_ahead)
 
-        # Convert days_ahead to hours for XGBoost (assumes hourly data)
         forecast_hours = days_ahead * 24
-
         forecasts = {}
         
-        # For XGBoost, we generate a single forecast from the trained model
-        # Since XGBoost doesn't have a direct multi-step forecasting interface like SARIMA,
-        # we use the predict method with iterative feature updates
         try:
-            # Create initial feature vector from the trained model
-            # For demonstration, generate synthetic features based on training data statistics
-            n_features = len(self.xgboost_model._feature_columns) if hasattr(self.xgboost_model, '_feature_columns') else 8
+            # 2. Extract initial features from historical data
+            if historical_data is not None:
+                if isinstance(historical_data, pd.DataFrame):
+                    # Ensure features exist
+                    from app.utils.timeseries_preprocessor import TimeSeriesPreprocessor
+                    preprocessor = TimeSeriesPreprocessor()
+                    feat_df = preprocessor.prepare_features(historical_data, target_col=self.xgboost_model.target_col)
+                    initial_features = feat_df.iloc[-1:]
+                else:
+                    # It's a numpy array, convert and add features
+                    df = pd.DataFrame(historical_data, columns=["AQI", "PM2.5", "PM10", "NO2", "SO2", "CO", "O3"])
+                    from app.utils.timeseries_preprocessor import TimeSeriesPreprocessor
+                    preprocessor = TimeSeriesPreprocessor()
+                    feat_df = preprocessor.prepare_features(df, target_col="AQI")
+                    initial_features = feat_df.iloc[-1:]
+            else:
+                # Fallback to random if truly no history (should not happen with DataService fix)
+                n_features = len(self.xgboost_model._feature_columns)
+                initial_features = pd.DataFrame(
+                    np.random.normal(loc=100, scale=20, size=(1, n_features)),
+                    columns=self.xgboost_model._feature_columns
+                )
             
-            # Use last row of training data (if available) or generate synthetic features
-            initial_features = pd.DataFrame(
-                np.random.normal(loc=50, scale=15, size=(1, n_features)),
-                columns=self.xgboost_model._feature_columns if hasattr(self.xgboost_model, '_feature_columns') else [f'feature_{i}' for i in range(n_features)]
-            )
-            
-            # Get iterative predictions
+            # 3. Get iterative predictions
             preds = self.xgboost_model.predict(initial_features, steps=forecast_hours)
             
             # Aggregate hourly predictions to daily
@@ -393,6 +420,23 @@ class ForecastingService:
             return 1 - (distance * 0.3)
         else:
             return 0.6
+
+    def _generate_simulated_forecast(self, location_id: str, days_ahead: int) -> Dict:
+        """Generate realistic simulated forecast data for demo mode."""
+        forecasts = {}
+        for parameter in ["pm25", "pm10", "no2", "o3", "so2", "co"]:
+            base_val = np.random.randint(20, 100)
+            preds = [float(base_val + (np.random.normal(0, base_val * 0.15))) for _ in range(days_ahead)]
+            forecasts[parameter] = self._format_forecast(np.array(preds), parameter, days_ahead)
+            
+        return {
+            "location_id": location_id,
+            "forecast_date": datetime.now().isoformat(),
+            "days_ahead": days_ahead,
+            "model_type": "simulation",
+            "forecasts": forecasts,
+            "is_demo": True
+        }
 
     def _get_mock_historical_data(self) -> np.ndarray:
         """

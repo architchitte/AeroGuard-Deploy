@@ -3,6 +3,7 @@ import {
   MapContainer,
   TileLayer,
   Circle,
+  CircleMarker,
   Tooltip,
   useMap,
 } from "react-leaflet";
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 
 import LocationSearch from "../components/LocationSelector";
-import { fetchAQI } from "../api/aqi";
+import { fetchAQI, fetchMapData } from "../api/aqi";
 
 /* ================= MAP CONTROLLER ================= */
 
@@ -43,10 +44,10 @@ const getAQIColor = (aqi) => {
 const getAQILabel = (aqi) => {
   if (aqi <= 50) return "Good";
   if (aqi <= 100) return "Moderate";
-    if (aqi <= 150) return "Unhealthy for Sensitive Groups";
-    if (aqi <= 200) return "Unhealthy";
-    if (aqi <= 300) return "Very Unhealthy";
-    return "Hazardous";
+  if (aqi <= 150) return "Unhealthy for Sensitive Groups";
+  if (aqi <= 200) return "Unhealthy";
+  if (aqi <= 300) return "Very Unhealthy";
+  return "Hazardous";
 }
 
 /* ================= MAIN ================= */
@@ -59,23 +60,41 @@ export default function PollutionHeatmap() {
   const [zoom, setZoom] = useState(5);
 
   // mock AQI (API later)
-    const [aqi, setAqi] = useState(null);
-    const color = getAQIColor(aqi ?? 0);
+  const [aqi, setAqi] = useState(null);
+  const [stations, setStations] = useState([]);
+  const [loadingStations, setLoadingStations] = useState(false);
+  const color = getAQIColor(aqi ?? 0);
 
-    useEffect(() => {
-        if (!location) return;
+  // 1. Fetch Nationwide Data
+  useEffect(() => {
+    const loadMapData = async () => {
+      try {
+        setLoadingStations(true);
+        const data = await fetchMapData(); // Fetches all stations
+        setStations(data);
+      } catch (err) {
+        console.error("Failed to fetch nationwide AQI points:", err);
+      } finally {
+        setLoadingStations(false);
+      }
+    };
+    loadMapData();
+  }, []);
 
-        const loadAQI = async () => {
-            try {
-            const data = await fetchAQI(location.lat, location.lon);
-            setAqi(data.aqi);
-            } catch (err) {
-            console.error("AQI fetch failed:", err);
-            }
-        };
+  useEffect(() => {
+    if (!location) return;
 
-        loadAQI();
-        }, [location]);
+    const loadAQI = async () => {
+      try {
+        const data = await fetchAQI(location.lat, location.lon);
+        setAqi(data.aqi);
+      } catch (err) {
+        console.error("AQI fetch failed:", err);
+      }
+    };
+
+    loadAQI();
+  }, [location]);
 
   /* -------- SEARCH -------- */
   const handleLocationSelect = (loc) => {
@@ -85,11 +104,11 @@ export default function PollutionHeatmap() {
   };
 
   /* -------- ZOOM PRESETS -------- */
-    const handleZoomPreset = (type) => {
+  const handleZoomPreset = (type) => {
     if (type === "country") {
-        setCenter(INDIA_CENTER);
-        setZoom(5);
-        return;
+      setCenter(INDIA_CENTER);
+      setZoom(5);
+      return;
     }
 
     if (!location) return;
@@ -97,15 +116,15 @@ export default function PollutionHeatmap() {
     const locCenter = [location.lat, location.lon];
 
     if (type === "city") {
-        setCenter(locCenter);
-        setZoom(12);
+      setCenter(locCenter);
+      setZoom(12);
     }
 
     if (type === "region") {
-        setCenter(locCenter); // 🔥 THIS WAS MISSING
-        setZoom(7);
+      setCenter(locCenter); // 🔥 THIS WAS MISSING
+      setZoom(7);
     }
-    };
+  };
 
   return (
     <div className="relative w-full h-[820px] rounded-3xl overflow-hidden bg-[#020617] border border-white/10">
@@ -175,7 +194,69 @@ export default function PollutionHeatmap() {
             />
           </>
         )}
+
+        {/* NATIONWIDE STATIONS */}
+        {stations.map((s) => (
+          <CircleMarker
+            key={s.uid || `${s.lat}-${s.lon}`}
+            center={[s.lat, s.lon]}
+            radius={zoom > 7 ? 12 : 8}
+            pathOptions={{
+              fillColor: getAQIColor(s.aqi),
+              fillOpacity: 0.8,
+              color: "#fff",
+              weight: 1,
+            }}
+          >
+            <Tooltip permanent={zoom > 8} direction="center" className="marker-tooltip-num" opacity={1}>
+              <span className="text-[9px] font-bold text-slate-900">{s.aqi}</span>
+            </Tooltip>
+
+            <Tooltip sticky className="aqi-details-tooltip">
+              <div className="p-2 min-w-[120px]">
+                <p className="text-[10px] uppercase text-slate-500 font-bold mb-1">Monitoring Station</p>
+                <p className="text-xs font-bold text-slate-900 mb-2 truncate max-w-[150px]">{s.station}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold" style={{ color: getAQIColor(s.aqi) }}>{s.aqi}</span>
+                  <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-bold uppercase">AQI</span>
+                </div>
+                <p className="text-[10px] mt-1 font-medium">{getAQILabel(s.aqi)}</p>
+              </div>
+            </Tooltip>
+          </CircleMarker>
+        ))}
       </MapContainer>
+
+      {/* LOADING OVERLAY */}
+      {loadingStations && (
+        <div className="absolute inset-0 z-[2000] bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center rounded-3xl">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin" />
+            <span className="text-white text-sm font-bold tracking-widest uppercase">Syncing National Grid</span>
+          </div>
+        </div>
+      )}
+
+      {/* LEGEND */}
+      <div className="absolute bottom-6 left-6 z-[1000] bg-slate-900/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl">
+        <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-wider">AQI Scale</h4>
+        <div className="space-y-2">
+          {[
+            { label: 'Good', range: '0 - 50', color: '#10b981' },
+            { label: 'Moderate', range: '51 - 100', color: '#f59e0b' },
+            { label: 'Unhealthy', range: '101 - 200', color: '#f97316' },
+            { label: 'Hazardous', range: '201+', color: '#ef4444' }
+          ].map(item => (
+            <div key={item.label} className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+              <div>
+                <p className="text-[10px] text-white font-bold leading-none">{item.label}</p>
+                <p className="text-[8px] text-slate-500">{item.range}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ================= SEARCH PANEL ================= */}
       <div className="absolute top-6 left-6 z-[1000] w-[380px] h-[200px]">

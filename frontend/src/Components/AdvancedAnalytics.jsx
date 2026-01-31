@@ -72,7 +72,8 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const TIME_SLOTS = ['Morning', 'Afternoon', 'Evening', 'Night'];
 const HEATMAP_COLORS = ['bg-teal-500/20', 'bg-yellow-500/20', 'bg-orange-500/40', 'bg-red-500/60'];
 
-export default function AdvancedAnalytics() {
+export default function AdvancedAnalytics({ location, persona }) {
+    const cityName = location?.name || 'Mumbai';
     const [timeRange, setTimeRange] = useState(14);
     const [forecastHorizon, setForecastHorizon] = useState(6);
     const [selectedPollutant, setSelectedPollutant] = useState('pm25');
@@ -90,6 +91,7 @@ export default function AdvancedAnalytics() {
     });
     const [featureImportance, setFeatureImportance] = useState([]);
     const [pollutantComposition, setPollutantComposition] = useState([]);
+    const [currentAqi, setCurrentAqi] = useState(100);
 
     // 1. Initial System Check
     useEffect(() => {
@@ -100,32 +102,47 @@ export default function AdvancedAnalytics() {
             const models = await analyticsService.getAvailableModels();
             setAvailableModels(models);
 
-            const composition = await analyticsService.getPollutantComposition();
+            const composition = await analyticsService.getPollutantComposition(cityName);
             setPollutantComposition(composition);
+
+            // Fetch current AQI from history
+            try {
+                const history = await analyticsService.getHistoricalAnalysis(1, cityName);
+                if (history && history.length > 0) {
+                    setCurrentAqi(history[history.length - 1].aqi || 100);
+                }
+            } catch (e) {
+                console.warn("Failed to fetch current AQI in analytics", e);
+            }
 
             const features = await analyticsService.getFeatureImportance();
             setFeatureImportance(features);
         };
         init();
-    }, []);
+    }, [cityName]);
 
-    // 2. Fetch History when timeRange changes
+    // 2. Fetch History when timeRange or city changes
     useEffect(() => {
         const fetchHistory = async () => {
-            const data = await analyticsService.getHistoricalAnalysis(timeRange);
+            const data = await analyticsService.getHistoricalAnalysis(timeRange, cityName);
             setHistoryData(data);
         };
         fetchHistory();
-    }, [timeRange]);
+    }, [timeRange, cityName]);
 
-    // 3. Fetch Metrics when horizon changes
+    // 3. Fetch Metrics when historyData or horizon changes
     useEffect(() => {
         const fetchMetrics = async () => {
-            const data = await analyticsService.getModelMetrics(forecastHorizon);
-            setMetrics(data);
+            if (historyData && historyData.length >= 20) {
+                const data = await analyticsService.runModelComparison(historyData, forecastHorizon);
+                setMetrics(data);
+            } else {
+                const data = await analyticsService.getModelMetrics(forecastHorizon);
+                setMetrics(data);
+            }
         };
         fetchMetrics();
-    }, [forecastHorizon]);
+    }, [historyData, forecastHorizon]);
 
     return (
         <div className="w-full space-y-8 text-slate-300">
@@ -149,7 +166,7 @@ export default function AdvancedAnalytics() {
             </div>
 
             {/* AI Powered Insights Briefing */}
-            <AeroIntelligenceBriefing city="Mumbai" persona="outdoor_athlete" />
+            <AeroIntelligenceBriefing city={cityName} persona={persona || 'general'} />
 
             {/* 1. CHART: Historical Trends */}
             <div className="glass-panel p-6 rounded-3xl border border-white/10">
@@ -187,7 +204,7 @@ export default function AdvancedAnalytics() {
                     </div>
                 </div>
 
-                <div style={{ width: '100%', height: 300 }}>
+                <div className="w-full h-[300px] min-h-[300px] min-w-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={historyData}>
                             <defs>
@@ -231,54 +248,69 @@ export default function AdvancedAnalytics() {
                 </div>
 
                 {/* Model Cards */}
-                {[
-                    { id: 'sarima', name: 'SARIMA (Statistical)', color: 'border-cyan-500/50', text: 'text-cyan-400', bg: 'bg-cyan-950/20' },
-                    { id: 'xgboost', name: 'XGBoost (ML)', color: 'border-purple-500/50', text: 'text-purple-400', bg: 'bg-purple-950/20' },
-                    { id: 'hybrid', name: 'AeroGuard Hybrid', color: 'border-orange-500/50', text: 'text-orange-400', bg: 'bg-orange-950/20', isWinner: true }
-                ].map(model => (
-                    <div key={model.id} className={`glass-panel p-6 rounded-2xl border ${model.color} ${model.bg} relative overflow-hidden group`}>
-                        {model.isWinner && (
-                            <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg shadow-lg z-10">
-                                TOP PERFORMER
-                            </div>
-                        )}
-                        <h4 className={`text-sm font-bold ${model.text} mb-4 flex items-center gap-2`}>
-                            {model.name}
-                        </h4>
+                {(() => {
+                    const modelConfigs = [
+                        { id: 'sarima', name: 'SARIMA (Statistical)', color: 'border-cyan-500/50', text: 'text-cyan-400', bg: 'bg-cyan-950/20' },
+                        { id: 'xgboost', name: 'XGBoost (ML)', color: 'border-purple-500/50', text: 'text-purple-400', bg: 'bg-purple-950/20' },
+                        { id: 'hybrid', name: 'AeroGuard Hybrid', color: 'border-orange-500/50', text: 'text-orange-400', bg: 'bg-orange-950/20' }
+                    ];
 
-                        <div className="flex items-end justify-between mb-4">
-                            <div>
-                                <span className="text-[10px] text-slate-400 uppercase tracking-widest">Predicted AQI</span>
-                                <p className="text-4xl font-display font-bold text-white mt-1">
-                                    {metrics[model.id].prediction}
-                                    <span className="text-xs text-slate-500 ml-2 font-normal">± {metrics[model.id].uncertainty}</span>
-                                </p>
+                    // Find winner based on lowest MAE (if metrics available)
+                    let winnerId = 'hybrid'; // Default
+                    if (metrics.sarima.mae > 0 && metrics.xgboost.mae > 0 && metrics.hybrid.mae > 0) {
+                        const maes = {
+                            sarima: parseFloat(metrics.sarima.mae),
+                            xgboost: parseFloat(metrics.xgboost.mae),
+                            hybrid: parseFloat(metrics.hybrid.mae)
+                        };
+                        winnerId = Object.keys(maes).reduce((a, b) => maes[a] < maes[b] ? a : b);
+                    }
+
+                    return modelConfigs.map(model => (
+                        <div key={model.id} className={`glass-panel p-6 rounded-2xl border ${model.id === winnerId ? 'border-orange-500/50 bg-orange-950/20' : model.color + ' ' + model.bg} relative overflow-hidden group transition-all duration-300`}>
+                            {model.id === winnerId && (
+                                <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg shadow-lg z-10 animate-pulse">
+                                    TOP PERFORMER
+                                </div>
+                            )}
+                            <h4 className={`text-sm font-bold ${model.text} mb-4 flex items-center gap-2`}>
+                                {model.name}
+                            </h4>
+
+                            <div className="flex items-end justify-between mb-4">
+                                <div>
+                                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Predicted AQI</span>
+                                    <p className="text-4xl font-display font-bold text-white mt-1">
+                                        {metrics[model.id].prediction}
+                                        <span className="text-xs text-slate-500 ml-2 font-normal">± {metrics[model.id].uncertainty}</span>
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <div className="radial-progress text-xs" style={{ "--value": metrics[model.id].r2 * 100, "--size": "2rem" }} role="progressbar">
+                                        {(metrics[model.id].r2 * 100).toFixed(0)}%
+                                    </div>
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <div className="radial-progress text-xs" style={{ "--value": metrics[model.id].r2 * 100, "--size": "2rem" }} role="progressbar">
-                                    {(metrics[model.id].r2 * 100).toFixed(0)}%
+
+                            <div className="space-y-2 pt-4 border-t border-white/5">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-slate-400">RMSE (Error):</span>
+                                    <span className="text-white font-mono">{metrics[model.id].rmse}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-slate-400">MAE (Accuracy):</span>
+                                    <span className="text-white font-mono">{metrics[model.id].mae}</span>
+                                </div>
+                                <div className="w-full bg-black/40 rounded-full h-1 mt-2 overflow-hidden">
+                                    <div
+                                        className={`h-full ${model.text.replace('text', 'bg')}`}
+                                        style={{ width: `${metrics[model.id].r2 * 100}%` }}
+                                    />
                                 </div>
                             </div>
                         </div>
-
-                        <div className="space-y-2 pt-4 border-t border-white/5">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-slate-400">RMSE (Error):</span>
-                                <span className="text-white font-mono">{metrics[model.id].rmse}</span>
-                            </div>
-                            <div className="flex justify-between text-xs">
-                                <span className="text-slate-400">MAE (Accuracy):</span>
-                                <span className="text-white font-mono">{metrics[model.id].mae}</span>
-                            </div>
-                            <div className="w-full bg-black/40 rounded-full h-1 mt-2 overflow-hidden">
-                                <div
-                                    className={`h-full ${model.text.replace('text', 'bg')}`}
-                                    style={{ width: `${metrics[model.id].r2 * 100}%` }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                ))}
+                    ))
+                })()}
             </div>
 
             {/* 3. FEATURE IMPORTANCE & BREAKDOWN */}
@@ -289,7 +321,7 @@ export default function AdvancedAnalytics() {
                     <h3 className="text-md font-bold text-white mb-6 flex items-center gap-2">
                         <Activity size={18} className="text-pink-400" /> Explainable AI (XAI)
                     </h3>
-                    <div style={{ width: '100%', height: 250 }}>
+                    <div className="w-full h-[250px] min-h-[250px] min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={featureImportance} margin={{ left: 40 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
@@ -310,22 +342,26 @@ export default function AdvancedAnalytics() {
 
                     {/* Breakdown */}
                     <div className="glass-panel p-5 rounded-3xl border border-white/10 flex items-center gap-6">
-                        <div style={{ width: 128, height: 128, flexShrink: 0 }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={pollutantComposition}
-                                        innerRadius={30}
-                                        outerRadius={50}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {pollutantComposition.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} stroke="rgba(0,0,0,0.5)" />
-                                        ))}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
+                        <div className="w-32 h-32 flex-shrink-0 min-w-0">
+                            {pollutantComposition && pollutantComposition.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={pollutantComposition}
+                                            innerRadius={30}
+                                            outerRadius={50}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {pollutantComposition.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="rgba(0,0,0,0.5)" />
+                                            ))}
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="w-full h-full rounded-full border-4 border-white/5 border-t-indigo-500 animate-spin" />
+                            )}
                         </div>
                         <div className="flex-1 space-y-2">
                             <h4 className="text-sm font-bold text-white">Pollutant Ratios</h4>
@@ -384,36 +420,56 @@ export default function AdvancedAnalytics() {
                         <AlertTriangle size={18} className="text-orange-400" /> Exposure Risk Assessment
                     </h3>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="text-xs text-slate-500 border-b border-white/5">
-                                    <th className="py-2 font-medium">Population Group</th>
-                                    <th className="py-2 font-medium">Risk Level</th>
-                                    <th className="py-2 font-medium">Max Exposure Time</th>
-                                    <th className="py-2 font-medium">Primary Symptom</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-sm">
-                                <tr className="border-b border-white/5 group hover:bg-white/5">
-                                    <td className="py-3 text-white font-medium">Children & Elderly</td>
-                                    <td className="py-3"><span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 text-xs border border-red-500/30">High</span></td>
-                                    <td className="py-3 text-slate-400">15 mins</td>
-                                    <td className="py-3 text-slate-400">Respiratory Irritation</td>
-                                </tr>
-                                <tr className="border-b border-white/5 group hover:bg-white/5">
-                                    <td className="py-3 text-white font-medium">Outdoor Athletes</td>
-                                    <td className="py-3"><span className="px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 text-xs border border-orange-500/30">Moderate</span></td>
-                                    <td className="py-3 text-slate-400">45 mins</td>
-                                    <td className="py-3 text-slate-400">Reduced Lung Function</td>
-                                </tr>
-                                <tr className="group hover:bg-white/5">
-                                    <td className="py-3 text-white font-medium">General Public</td>
-                                    <td className="py-3"><span className="px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 text-xs border border-yellow-500/30">Low</span></td>
-                                    <td className="py-3 text-slate-400">2 Hours</td>
-                                    <td className="py-3 text-slate-400">Eye Irritation</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        {(() => {
+                            const getPersonaRisk = (id, aqi) => {
+                                const baseRisks = {
+                                    vulnerable: { multiplier: 1.5, threshold: 50 },
+                                    outdoor: { multiplier: 1.2, threshold: 80 },
+                                    general: { multiplier: 1.0, threshold: 100 }
+                                };
+                                const risk = baseRisks[id];
+                                const effectiveAqi = aqi * risk.multiplier;
+
+                                if (effectiveAqi < 50) return { risk: 'Low', exposure: 'Unlimited', symptom: 'No special precautions', color: 'text-neon-teal', bg: 'bg-teal-500/10', border: 'border-teal-500/20' };
+                                if (effectiveAqi < 120) return { risk: 'Moderate', exposure: '2-4 Hours', symptom: 'Monitor air quality', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' };
+                                if (effectiveAqi < 200) return { risk: 'High', exposure: '45-90 mins', symptom: 'Limit outdoor exertion', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' };
+                                return { risk: 'Critical', exposure: '< 20 mins', symptom: 'Avoid outdoor activities', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
+                            };
+
+                            const riskData = [
+                                { id: 'vulnerable', label: 'Children & Elderly' },
+                                { id: 'outdoor', label: 'Outdoor Athletes' },
+                                { id: 'general', label: 'General Public' },
+                            ].map(group => ({
+                                ...group,
+                                ...getPersonaRisk(group.id, currentAqi)
+                            }));
+
+                            return (
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="text-xs text-slate-500 border-b border-white/5">
+                                            <th className="py-2 font-medium">Population Group</th>
+                                            <th className="py-2 font-medium">Risk Level</th>
+                                            <th className="py-2 font-medium">Max Exposure (Est.)</th>
+                                            <th className="py-2 font-medium">Primary Precaution</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {riskData.map(group => (
+                                            <tr key={group.id} className={`border-b border-white/5 group transition-all duration-300 ${persona === group.id ? 'bg-indigo-500/10' : 'hover:bg-white/5'}`}>
+                                                <td className={`py-3 font-medium ${persona === group.id ? 'text-indigo-400' : 'text-white'}`}>
+                                                    {group.label} {persona === group.id && <span className="text-[10px] ml-2 font-bold bg-indigo-500 text-white px-1.5 py-0.5 rounded">ACTIVE</span>}
+                                                </td>
+                                                <td className="py-3"><span className={`px-2 py-0.5 rounded ${group.bg} ${group.color} text-xs border ${group.border}`}>{group.risk}</span></td>
+                                                <td className="py-3 text-slate-400">{group.exposure}</td>
+                                                <td className="py-3 text-slate-400">{group.symptom}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            );
+                        })()}
                     </div>
                 </div>
 
