@@ -1,7 +1,7 @@
 export default function Alerts() {
   return (
-    <div className="w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.08),_transparent_55%)] pointer-events-none" />
+    <div className="w-full bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.08),transparent_55%)] pointer-events-none" />
       <div className="relative w-full px-4 sm:px-6 md:px-8 py-6 md:py-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold text-white mb-2">Alerts</h1>
