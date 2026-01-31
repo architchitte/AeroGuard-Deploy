@@ -2,13 +2,19 @@
 Forecasting Service
 
 High-level service for generating air quality forecasts.
+Supports multiple model types: sklearn ensemble (ForecastModel) or SARIMA.
 """
 
 import numpy as np
-from typing import Dict, List, Tuple, Optional
+import pandas as pd
+from typing import Dict, List, Tuple, Optional, Literal
 from app.models.forecast_model import ForecastModel
+from app.models.sarima_model import SARIMAModel
 from app.utils.preprocessors import DataPreprocessor
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ForecastingService:
@@ -16,16 +22,20 @@ class ForecastingService:
     Service for air quality forecasting operations.
 
     Manages model interactions, data preprocessing, and forecast generation.
+    Supports both sklearn-based ensemble models and SARIMA time-series models.
     """
 
-    def __init__(self, model: ForecastModel):
+    def __init__(self, model: Optional[ForecastModel] = None, model_type: Literal["ensemble", "sarima"] = "ensemble"):
         """
         Initialize the forecasting service.
 
         Args:
-            model: ForecastModel instance
+            model: ForecastModel instance (for ensemble mode)
+            model_type: "ensemble" (uses ForecastModel) or "sarima" (uses SARIMAModel)
         """
+        self.model_type = model_type
         self.model = model
+        self.sarima_model: Optional[SARIMAModel] = None
         self.preprocessor = DataPreprocessor()
 
     def generate_forecast(
@@ -37,6 +47,30 @@ class ForecastingService:
         """
         Generate air quality forecast for specified location and duration.
 
+        Delegates to ensemble or SARIMA based on model_type.
+
+        Args:
+            location_id: Identifier for the location
+            days_ahead: Number of days to forecast (1-30)
+            historical_data: Historical air quality data for context
+
+        Returns:
+            Dictionary with forecast results including predictions and confidence
+        """
+        if self.model_type == "sarima":
+            return self.generate_sarima_forecast(location_id, days_ahead, historical_data)
+        else:
+            return self.generate_ensemble_forecast(location_id, days_ahead, historical_data)
+
+    def generate_ensemble_forecast(
+        self,
+        location_id: str,
+        days_ahead: int = 7,
+        historical_data: Optional[np.ndarray] = None,
+    ) -> Dict:
+        """
+        Generate air quality forecast using sklearn ensemble model (ForecastModel).
+
         Args:
             location_id: Identifier for the location
             days_ahead: Number of days to forecast (1-30)
@@ -47,6 +81,9 @@ class ForecastingService:
         """
         if not 1 <= days_ahead <= 30:
             raise ValueError("days_ahead must be between 1 and 30")
+
+        if self.model is None:
+            raise RuntimeError("No ensemble model configured")
 
         if historical_data is None:
             historical_data = self._get_mock_historical_data()
@@ -63,6 +100,7 @@ class ForecastingService:
                     predictions, parameter, days_ahead
                 )
             except Exception as e:
+                logger.exception(f"Ensemble forecast error for {parameter}")
                 forecasts[parameter] = {
                     "status": "error",
                     "message": str(e),
@@ -73,8 +111,102 @@ class ForecastingService:
             "location_id": location_id,
             "forecast_date": datetime.now().isoformat(),
             "days_ahead": days_ahead,
+            "model_type": "ensemble",
             "forecasts": forecasts,
         }
+
+    def generate_sarima_forecast(
+        self,
+        location_id: str,
+        days_ahead: int = 7,
+        historical_data: Optional[np.ndarray] = None,
+    ) -> Dict:
+        """
+        Generate air quality forecast using SARIMA time-series model.
+
+        Args:
+            location_id: Identifier for the location
+            days_ahead: Number of days to forecast (1-30)
+            historical_data: Historical air quality data (hourly pandas Series preferred)
+
+        Returns:
+            Dictionary with forecast results including predictions and confidence
+        """
+        if not 1 <= days_ahead <= 30:
+            raise ValueError("days_ahead must be between 1 and 30")
+
+        if self.sarima_model is None:
+            raise RuntimeError("SARIMA model not trained. Call `train_sarima()` first.")
+
+        # Convert days_ahead to hours for SARIMA (assumes hourly data)
+        forecast_hours = days_ahead * 24
+
+        forecasts = {}
+        
+        # SARIMA typically forecasts a single parameter (e.g., PM2.5)
+        # Generate forecast for each common parameter
+        for parameter in ["pm25", "pm10", "aqi"]:
+            try:
+                preds = self.sarima_model.predict(steps=forecast_hours)
+                # Aggregate hourly predictions to daily
+                daily_preds = self._aggregate_to_daily(preds, days_ahead)
+                forecasts[parameter] = self._format_forecast(
+                    np.array(daily_preds), parameter, days_ahead
+                )
+            except Exception as e:
+                logger.exception(f"SARIMA forecast error for {parameter}")
+                forecasts[parameter] = {
+                    "status": "error",
+                    "message": str(e),
+                    "predictions": [],
+                }
+
+        return {
+            "location_id": location_id,
+            "forecast_date": datetime.now().isoformat(),
+            "days_ahead": days_ahead,
+            "model_type": "sarima",
+            "forecasts": forecasts,
+        }
+
+    def train_sarima(self, series: pd.Series) -> None:
+        """
+        Train the SARIMA model on historical data.
+
+        Args:
+            series: Pandas Series of historical air quality (hourly index preferred)
+
+        Raises:
+            ValueError: If series is invalid
+        """
+        if self.sarima_model is None:
+            self.sarima_model = SARIMAModel()
+        try:
+            self.sarima_model.train(series)
+            logger.info("SARIMA model trained successfully")
+        except Exception as e:
+            logger.exception("SARIMA training failed")
+            raise
+
+    def _aggregate_to_daily(self, hourly_preds: List[float], days: int) -> List[float]:
+        """
+        Aggregate hourly predictions to daily (24-hour rolling mean).
+
+        Args:
+            hourly_preds: List of hourly predictions
+            days: Number of days to aggregate to
+
+        Returns:
+            List of daily aggregated predictions
+        """
+        daily = []
+        for d in range(days):
+            start = d * 24
+            end = min(start + 24, len(hourly_preds))
+            if start < len(hourly_preds):
+                day_preds = hourly_preds[start:end]
+                daily.append(float(np.mean(day_preds)))
+        return daily
 
     def _format_forecast(
         self, predictions: np.ndarray, parameter: str, days_ahead: int
