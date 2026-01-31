@@ -1,45 +1,77 @@
-# AeroGuard Documentation
+# AeroGuard Backend Documentation
 
-Welcome to the AeroGuard documentation hub. All documentation is organized by category and feature for easy navigation.
+Welcome to the AeroGuard Backend documentation hub. All documentation is organized by category and feature for easy navigation.
 
 ## 📚 Documentation Structure
 
 ```
 docs/
-├── 01_getting_started/          ← Start here!
-│   ├── GETTING_STARTED.md       - Quick introduction
-│   ├── DEVELOPMENT.md           - Development setup
-│   └── SETUP_SUMMARY.md         - Setup instructions
+├── 01_getting_started/                    ← START HERE
+│   ├── README.md                          - Overview
+│   ├── GETTING_STARTED.md                 - Quick introduction
+│   ├── DEVELOPMENT.md                     - Development setup
+│   ├── SETUP_SUMMARY.md                   - Setup instructions
+│   └── DELIVERY_SUMMARY.md                - Delivery overview
 │
-├── 02_models/                   ← Machine learning models
-│   ├── sarima/
-│   │   └── (SARIMA model documentation)
-│   │
+├── 02_models/                             ← Machine Learning Models
 │   └── xgboost/
-│       ├── XGBOOST_MODEL.md     - XGBoost implementation
-│       └── XGBOOST_INTEGRATION_COMPLETE.md
+│       ├── XGBOOST_MODEL.md               - XGBoost implementation & usage
+│       └── XGBOOST_INTEGRATION_COMPLETE.md - Integration complete report
 │
-├── 03_preprocessing/            ← Data preprocessing
-│   ├── TIMESERIES_PREPROCESSING.md    - Data preprocessing guide
-│   ├── TIMESERIES_QUICK_REFERENCE.md  - Quick reference
-│   └── TIMESERIES_IMPLEMENTATION_SUMMARY.md
+├── 03_data/                               ← Data Processing
+│   ├── SPATIAL_INTERPOLATION.md           - Spatial interpolation guide
+│   └── SPATIAL_INTERPOLATION_QUICK_REF.md - Quick reference
 │
-├── 04_services/                 ← Business logic services
-│   ├── model_comparison/        - Model comparison service
-│   │   ├── JUDGE_FAVORITE_SUMMARY.md
-│   │   ├── MODEL_SELECTOR.md
-│   │   └── MODEL_SELECTOR_QUICK_REFERENCE.md
+├── 03_preprocessing/                      ← Time Series Data Preprocessing
+│   ├── TIMESERIES_PREPROCESSING.md            - Comprehensive guide
+│   ├── TIMESERIES_QUICK_REFERENCE.md         - Quick reference
+│   └── TIMESERIES_IMPLEMENTATION_SUMMARY.md  - Implementation summary
+│
+├── 04_services/                           ← Business Logic Services
+│   ├── explainability/                    - Model explainability
+│   │   ├── EXPLAINABILITY_ENGINE.md               - Core engine documentation
+│   │   ├── EXPLAINABILITY_QUICK_REF.md            - Quick reference
+│   │   ├── EXPLAINABILITY_IMPLEMENTATION_COMPLETE.md
+│   │   ├── GENERATIVE_EXPLAINER.md               - LLM-based explainer
+│   │   └── GENERATIVE_QUICK_REF.md               - Quick reference
 │   │
-│   └── health_risk/             - Health risk classification
-│       ├── HEALTH_RISK_ENGINE.md
-│       └── HEALTH_RISK_QUICK_REF.md
+│   ├── health_risk/                       - Health risk classification
+│   │   ├── HEALTH_RISK_ENGINE.md          - Classification engine
+│   │   ├── HEALTH_RISK_QUICK_REF.md       - Quick reference
+│   │   ├── HEALTH_RISK_COMPLETE.md        - Completion report
+│   │   ├── HEALTH_RISK_DELIVERY.md        - Delivery documentation
+│   │   └── HEALTH_RISK_SUMMARY.md         - Summary
+│   │
+│   └── model_comparison/                  - Model comparison & selection
+│       ├── MODEL_SELECTOR.md              - Model selector logic
+│       ├── MODEL_SELECTOR_QUICK_REFERENCE.md
+│       ├── JUDGE_FAVORITE_SUMMARY.md      - Judge favorite summary
+│       ├── JUDGE_FAVORITE_INDEX.md        - Judge favorite index
+│       ├── JUDGE_FAVORITE_CHECKLIST.md    - Checklist
+│       ├── JUDGE_FAVORITE_COMPLETE.md     - Completion report
+│       └── JUDGE_FAVORITE_QUICK_START.md  - Quick start guide
 │
-├── 05_apis/                     ← REST API documentation
-│   └── MODEL_COMPARISON_API.md  - Model comparison API reference
+├── 05_apis/                               ← REST API Documentation
+│   ├── API_ENDPOINTS_COMPLETE.md          - Complete API endpoints reference
+│   └── MODEL_COMPARISON_API.md            - Model comparison API guide
 │
-└── 06_project/                  ← Project information
-    ├── PROJECT_STRUCTURE.md     - Project organization
-    └── PROJECT_SUMMARY.py       - Project summary
+├── 05_main_app/                           ← Main Flask Application
+│   ├── MAIN_FLASK_APP.md                  - Complete reference guide
+│   ├── MAIN_FLASK_APP_DELIVERY.md         - Delivery documentation
+│   ├── MAIN_FLASK_APP_EXAMPLES.md         - Working code examples
+│   ├── MAIN_FLASK_APP_COMPLETION.md       - Completion report
+│   ├── QUICK_START.md                     - Quick start (5 minutes)
+│   ├── INTEGRATION_GUIDE.md                - Integration guide
+│   └── INDEX.md                           - Complete index
+│
+└── 06_project/                            ← Project Information
+    ├── PROJECT_STRUCTURE.md               - Project organization
+    ├── DELIVERY_PACKAGE.md                - Delivery package contents
+    ├── PHASE_2_COMPLETE.md                - Phase 2 completion
+    ├── PHASE_2_COMPLETION.md              - Phase 2 completion details
+    ├── REORGANIZATION_COMPLETE.md         - Reorganization complete
+    ├── REORGANIZATION_SUMMARY.md          - Reorganization summary
+    └── DOCS_REORGANIZATION_COMPLETE.md    - Docs reorganization report
 
 ```
 
@@ -48,7 +80,8 @@ docs/
 ### For New Users
 1. Start with [01_getting_started/GETTING_STARTED.md](01_getting_started/GETTING_STARTED.md)
 2. Review [01_getting_started/DEVELOPMENT.md](01_getting_started/DEVELOPMENT.md) for setup
-3. Check [06_project/PROJECT_STRUCTURE.md](06_project/PROJECT_STRUCTURE.md) for overview
+3. Check [01_getting_started/SETUP_SUMMARY.md](01_getting_started/SETUP_SUMMARY.md) for instructions
+4. See [06_project/PROJECT_STRUCTURE.md](06_project/PROJECT_STRUCTURE.md) for overview
 
 ### For Model Development
 1. [02_models/xgboost/XGBOOST_MODEL.md](02_models/xgboost/XGBOOST_MODEL.md) - XGBoost models
@@ -56,15 +89,15 @@ docs/
 3. [03_preprocessing/TIMESERIES_QUICK_REFERENCE.md](03_preprocessing/TIMESERIES_QUICK_REFERENCE.md) - Quick ref
 
 ### For Service Integration
-1. [04_services/model_comparison/JUDGE_FAVORITE_SUMMARY.md](04_services/model_comparison/JUDGE_FAVORITE_SUMMARY.md) - Model comparison
-2. [04_services/health_risk/HEALTH_RISK_ENGINE.md](04_services/health_risk/HEALTH_RISK_ENGINE.md) - Health risk assessment
-3. [05_apis/MODEL_COMPARISON_API.md](05_apis/MODEL_COMPARISON_API.md) - REST API endpoints
+1. [04_services/model_comparison/MODEL_SELECTOR.md](04_services/model_comparison/MODEL_SELECTOR.md) - Model comparison
+2. [04_services/health_risk/HEALTH_RISK_ENGINE.md](04_services/health_risk/HEALTH_RISK_ENGINE.md) - Health risk
+3. [04_services/explainability/EXPLAINABILITY_ENGINE.md](04_services/explainability/EXPLAINABILITY_ENGINE.md) - Explainability
+4. [05_apis/API_ENDPOINTS_COMPLETE.md](05_apis/API_ENDPOINTS_COMPLETE.md) - REST API endpoints
 
-### For Specific Features
-- **Time Series Preprocessing**: [03_preprocessing/](03_preprocessing/)
-- **Model Comparison**: [04_services/model_comparison/](04_services/model_comparison/)
-- **Health Risk Classification**: [04_services/health_risk/](04_services/health_risk/)
-- **REST APIs**: [05_apis/](05_apis/)
+### For Flask Application
+1. [05_main_app/QUICK_START.md](05_main_app/QUICK_START.md) - Get running in 5 minutes
+2. [05_main_app/MAIN_FLASK_APP.md](05_main_app/MAIN_FLASK_APP.md) - Complete reference
+3. [05_main_app/INTEGRATION_GUIDE.md](05_main_app/INTEGRATION_GUIDE.md) - Integration guide
 
 ## 📖 Category Descriptions
 
@@ -77,46 +110,64 @@ Entry point documentation covering:
 
 ### 02 - Models
 Machine learning model implementations:
-- **SARIMA**: Time series forecasting model
-- **XGBoost**: Gradient boosting model
-- Model specifications and usage
+- **XGBoost**: Gradient boosting model with documentation and integration guide
+- Model specifications, usage, and performance
 
-### 03 - Preprocessing
+### 03 - Data (Spatial Interpolation)
+Data processing for hyper-local air quality:
+- Spatial interpolation techniques
+- Implementation guide and quick reference
+
+### 03_preprocessing - Time Series Data
 Data preparation and transformation:
 - Time series preprocessing pipeline
 - Feature engineering
-- Data validation
+- Implementation summary and quick reference
 
 ### 04 - Services
-Business logic services:
-- **Model Comparison**: Compare and select best model
-- **Health Risk**: Classify health risks from AQI values
+Business logic services organized by feature:
+- **Model Comparison**: Compare and select best model (Judge Favorite)
+- **Health Risk**: Classify health risks from AQI values (6-persona assessment)
+- **Explainability**: Rule-based and generative model explanations
 - Service architecture and usage
 
-### 05 - APIs
+### 05_apis - REST API
 REST API endpoint documentation:
-- Model comparison endpoints
+- Complete API endpoint reference
+- Model comparison API guide
 - Request/response formats
 - Error handling
-- Integration examples
+
+### 05_main_app - Flask Application
+Main Flask application documentation:
+- Application factory and configuration
+- Blueprint registration
+- CORS setup
+- Error handling
+- Deployment guide
+- Integration with services
 
 ### 06 - Project
 High-level project information:
-- Project structure
-- Component overview
-- File organization
-- Project summary
+- Project structure and organization
+- Delivery packages and completion reports
+- Phase summaries
+- Reorganization notes
 
 ## 🔍 Finding What You Need
 
 | Looking for... | Go to... |
 |---|---|
-| How to set up the project | [01_getting_started/SETUP_SUMMARY.md](01_getting_started/SETUP_SUMMARY.md) |
-| XGBoost model details | [02_models/xgboost/](02_models/xgboost/) |
+| Project setup & installation | [01_getting_started/SETUP_SUMMARY.md](01_getting_started/SETUP_SUMMARY.md) |
+| XGBoost model details | [02_models/xgboost/XGBOOST_MODEL.md](02_models/xgboost/XGBOOST_MODEL.md) |
+| Spatial interpolation | [03_data/SPATIAL_INTERPOLATION.md](03_data/SPATIAL_INTERPOLATION.md) |
 | Data preprocessing guide | [03_preprocessing/TIMESERIES_PREPROCESSING.md](03_preprocessing/TIMESERIES_PREPROCESSING.md) |
-| Model comparison service | [04_services/model_comparison/](04_services/model_comparison/) |
-| Health risk assessment | [04_services/health_risk/](04_services/health_risk/) |
-| API endpoints | [05_apis/MODEL_COMPARISON_API.md](05_apis/MODEL_COMPARISON_API.md) |
+| Model comparison service | [04_services/model_comparison/MODEL_SELECTOR.md](04_services/model_comparison/MODEL_SELECTOR.md) |
+| Health risk assessment | [04_services/health_risk/HEALTH_RISK_ENGINE.md](04_services/health_risk/HEALTH_RISK_ENGINE.md) |
+| Model explainability | [04_services/explainability/EXPLAINABILITY_ENGINE.md](04_services/explainability/EXPLAINABILITY_ENGINE.md) |
+| LLM-based explanations | [04_services/explainability/GENERATIVE_EXPLAINER.md](04_services/explainability/GENERATIVE_EXPLAINER.md) |
+| Flask application | [05_main_app/QUICK_START.md](05_main_app/QUICK_START.md) |
+| API endpoints | [05_apis/API_ENDPOINTS_COMPLETE.md](05_apis/API_ENDPOINTS_COMPLETE.md) |
 | Project overview | [06_project/PROJECT_STRUCTURE.md](06_project/PROJECT_STRUCTURE.md) |
 
 ## 📝 Document Types
@@ -132,6 +183,7 @@ Complete documentation covering:
 **Examples**: 
 - [HEALTH_RISK_ENGINE.md](04_services/health_risk/HEALTH_RISK_ENGINE.md)
 - [XGBOOST_MODEL.md](02_models/xgboost/XGBOOST_MODEL.md)
+- [MAIN_FLASK_APP.md](05_main_app/MAIN_FLASK_APP.md)
 
 ### Quick References
 Condensed guides for quick lookup:
@@ -143,8 +195,9 @@ Condensed guides for quick lookup:
 **Examples**:
 - [HEALTH_RISK_QUICK_REF.md](04_services/health_risk/HEALTH_RISK_QUICK_REF.md)
 - [TIMESERIES_QUICK_REFERENCE.md](03_preprocessing/TIMESERIES_QUICK_REFERENCE.md)
+- [QUICK_START.md](05_main_app/QUICK_START.md)
 
-### Summaries
+### Summaries & Completion Reports
 Overview documents highlighting:
 - Key features
 - Implementation status
@@ -153,11 +206,41 @@ Overview documents highlighting:
 
 **Examples**:
 - [JUDGE_FAVORITE_SUMMARY.md](04_services/model_comparison/JUDGE_FAVORITE_SUMMARY.md)
-- [XGBOOST_INTEGRATION_COMPLETE.md](02_models/xgboost/XGBOOST_INTEGRATION_COMPLETE.md)
+- [MAIN_FLASK_APP_DELIVERY.md](05_main_app/MAIN_FLASK_APP_DELIVERY.md)
+- [DELIVERY_PACKAGE.md](06_project/DELIVERY_PACKAGE.md)
 
 ## 🎯 By Use Case
 
-### I'm a Developer
+### I'm a New Developer
+1. Read [01_getting_started/GETTING_STARTED.md](01_getting_started/GETTING_STARTED.md)
+2. Follow [01_getting_started/DEVELOPMENT.md](01_getting_started/DEVELOPMENT.md) to setup
+3. Review [06_project/PROJECT_STRUCTURE.md](06_project/PROJECT_STRUCTURE.md)
+4. Explore the service layer in [04_services/](04_services/)
+
+### I'm Working on Models
+1. Check [02_models/xgboost/XGBOOST_MODEL.md](02_models/xgboost/XGBOOST_MODEL.md)
+2. Review data prep: [03_preprocessing/](03_preprocessing/)
+3. See model selection: [04_services/model_comparison/MODEL_SELECTOR.md](04_services/model_comparison/MODEL_SELECTOR.md)
+
+### I'm Integrating Services
+1. Start with [05_main_app/INTEGRATION_GUIDE.md](05_main_app/INTEGRATION_GUIDE.md)
+2. Check service docs in [04_services/](04_services/)
+3. Review API endpoints: [05_apis/API_ENDPOINTS_COMPLETE.md](05_apis/API_ENDPOINTS_COMPLETE.md)
+
+### I'm Deploying to Production
+1. Follow [05_main_app/MAIN_FLASK_APP.md](05_main_app/MAIN_FLASK_APP.md) deployment section
+2. Configure in [05_main_app/QUICK_START.md](05_main_app/QUICK_START.md)
+3. Verify APIs in [05_apis/](05_apis/)
+
+## 📊 Documentation Statistics
+
+- **Total Categories**: 6
+- **Total Sections**: 15+
+- **Total Documents**: 47+
+- **Code Examples**: Included in all service documentation
+- **Quick References**: Available for complex topics
+- **Completion Reports**: Available for all major features
+
 1. Read [01_getting_started/DEVELOPMENT.md](01_getting_started/DEVELOPMENT.md)
 2. Review [06_project/PROJECT_STRUCTURE.md](06_project/PROJECT_STRUCTURE.md)
 3. Explore relevant service docs in [04_services/](04_services/)
