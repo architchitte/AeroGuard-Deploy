@@ -10,6 +10,7 @@ from flask_cors import CORS
 from app.config import Config
 from app.utils.error_handlers import register_error_handlers
 from app.routes import health, forecast, model
+from app.routes.model_comparison import model_comparison_bp
 
 
 def create_app(config_class=Config):
@@ -35,5 +36,6 @@ def create_app(config_class=Config):
     app.register_blueprint(health.bp)
     app.register_blueprint(forecast.bp)
     app.register_blueprint(model.bp)
+    app.register_blueprint(model_comparison_bp)
 
     return app
