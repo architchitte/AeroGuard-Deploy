@@ -17,6 +17,7 @@ AeroGuard/
 │   │   └── xgboost_model.py     # XGBoost gradient boosting model
 │   ├── services/            # Business logic layer
 │   │   ├── forecasting_service.py   # Forecast orchestration (ensemble, SARIMA, XGBoost)
+│   │   ├── model_selector.py        # Model comparison & selection (Judge Favorite ⭐)
 │   │   ├── data_service.py          # Data retrieval
 │   │   └── data_preprocessing.py    # Data ingestion & preprocessing
 │   ├── routes/              # REST API endpoints
@@ -34,7 +35,8 @@ AeroGuard/
 │   ├── test_timeseries.py  # Time-series module tests
 │   ├── test_sarima_model.py    # SARIMA model tests
 │   ├── test_xgboost_model.py   # XGBoost model tests
-│   └── test_forecasting_service_xgboost.py  # XGBoost service integration
+│   ├── test_forecasting_service_xgboost.py  # XGBoost service integration
+│   └── test_model_selector.py  # Model comparison service tests (29 tests)
 │
 ├── examples/               # Example scripts and sample data
 │   ├── timeseries_examples.py  # Time-series usage examples
@@ -45,6 +47,7 @@ AeroGuard/
 │   ├── DEVELOPMENT.md      # Development guide
 │   ├── GETTING_STARTED.md  # Quick start guide
 │   ├── PROJECT_STRUCTURE.md    # Detailed structure
+│   ├── MODEL_SELECTOR.md       # Model comparison & selection guide
 │   ├── XGBOOST_MODEL.md        # XGBoost model documentation
 │   ├── TIMESERIES_PREPROCESSING.md     # Time-series preprocessing API
 │   └── TIMESERIES_QUICK_REFERENCE.md   # Quick lookup
@@ -311,10 +314,50 @@ forecast = service.generate_xgboost_forecast("location_id", days_ahead=7)
 - **Feature importance**: Analyze model decisions
 - **Model persistence**: Save/load with joblib
 
+### Model Comparison & Selection (Judge Favorite ⭐)
+
+**Automated model selection service** that trains multiple models and selects the best performer based on validation metrics.
+
+```python
+from app.services.model_selector import ModelSelector
+from app.models.sarima_model import SARIMAModel
+from app.models.xgboost_model import XGBoostModel
+
+# Create selector
+selector = ModelSelector()
+selector.add_model("SARIMA", SARIMAModel())
+selector.add_model("XGBoost", XGBoostModel())
+
+# Run comparison - trains both models and returns winner
+result = selector.select_best(df, target_col="PM2.5", forecast_steps=6)
+
+# Get results
+best_model = result['best_model']      # "SARIMA" or "XGBoost"
+metrics = result['metrics']             # MAE/RMSE for each model
+predictions = result['predictions']     # Forecasts from all models
+```
+
+**Features:**
+- Automatically trains all models in parallel
+- Compares using MAE and RMSE metrics
+- Selects best model based on validation performance
+- Generates detailed comparison reports
+- Extensible design: Add new models without modification
+- Support for different forecast horizons
+
+**Benefits:**
+- Reduce decision paralysis - automatic model selection
+- Fair model comparison on held-out test data
+- Detailed metrics for model evaluation
+- Easy to extend with new models
+- Production-ready error handling
+
 ### Documentation
+- [Model Comparison Guide](docs/MODEL_SELECTOR.md)
 - [XGBoost Model Guide](docs/XGBOOST_MODEL.md)
 - [SARIMA Implementation](docs/TIMESERIES_PREPROCESSING.md)
 - [Feature Engineering](docs/PROJECT_STRUCTURE.md)
+- [Examples](examples/model_comparison_example.py)
 
 ## ⚙️ Configuration
 
