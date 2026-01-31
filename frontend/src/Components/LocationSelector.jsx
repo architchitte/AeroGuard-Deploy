@@ -1,41 +1,86 @@
-import { MapPin } from 'lucide-react';
+import { useState } from "react";
+import { MapPin, Search } from "lucide-react";
 
-const mockLocations = [
-  { id: '1', name: 'Connaught Place', area: 'Central Delhi', lat: 28.6315, lng: 77.2167 },
-  { id: '2', name: 'Delhi Center', area: 'Central Delhi', lat: 28.63, lng: 77.22 },
-  { id: '3', name: 'Noida City Center', area: 'Noida', lat: 28.5921, lng: 77.3707 },
-  { id: '4', name: 'Gurgaon', area: 'Haryana', lat: 28.4595, lng: 77.0266 },
-  { id: '5', name: 'Greater Noida', area: 'Noida', lat: 28.4744, lng: 77.5040 },
-];
+export default function LocationSearch({ onSelect }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-export default function LocationSelector({ selected, onSelect }) {
+  const searchLocation = async (text) => {
+    setQuery(text);
+
+    // If input too small → reset
+    if (text.length < 3) {
+      setResults([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          text
+        )}&format=json&limit=5`
+      );
+
+      const data = await res.json();
+
+      setResults(
+        data.map((item) => ({
+          name: item.display_name,
+          lat: parseFloat(item.lat),
+          lon: parseFloat(item.lon),
+        }))
+      );
+    } catch (err) {
+      console.error("Location search failed", err);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl p-6 shadow-2xl border border-slate-700">
-      <div className="flex items-center gap-3 mb-4">
-        <MapPin className="w-5 h-5 text-teal-400" />
-        <h3 className="text-lg font-bold text-white">Location</h3>
+    <div className="bg-slate-800 rounded-2xl p-5 border border-slate-700">
+      <div className="flex items-center gap-2 mb-3">
+        <MapPin className="text-teal-400" size={18} />
+        <h3 className="text-white font-semibold">Search Location</h3>
       </div>
-      
-      <select
-        value={selected?.id || '1'}
-        onChange={(e) => {
-          const loc = mockLocations.find(l => l.id === e.target.value);
-          onSelect(loc);
-        }}
-        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white text-sm hover:border-teal-500 transition-colors cursor-pointer"
-      >
-        {mockLocations.map(loc => (
-          <option key={loc.id} value={loc.id}>
-            {loc.name} - {loc.area}
-          </option>
-        ))}
-      </select>
-      
-      <div className="mt-4 pt-4 border-t border-slate-600">
-        <p className="text-slate-300 font-semibold">{selected?.name}</p>
-        <p className="text-slate-400 text-sm">{selected?.area}</p>
-        <p className="text-xs text-slate-500 mt-2">📍 {selected?.lat?.toFixed(4)}, {selected?.lng?.toFixed(4)}</p>
+
+      {/* INPUT */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+        <input
+          value={query}
+          onChange={(e) => searchLocation(e.target.value)}
+          placeholder="Search city, area, place..."
+          className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-teal-400"
+        />
       </div>
+
+      {/* LOADING */}
+      {loading && (
+        <p className="text-xs text-slate-400 mt-2">Searching…</p>
+      )}
+
+      {/* RESULTS */}
+      {!loading && results.length > 0 && (
+        <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
+          {results.map((loc, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                onSelect(loc);
+                setQuery("");     // ✅ allows fresh search
+                setResults([]);   // ✅ hide dropdown
+              }}
+              className="w-full text-left px-3 py-2 rounded-lg bg-black/30 hover:bg-white/5 text-slate-300 text-xs transition"
+            >
+              {loc.name}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
