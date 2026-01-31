@@ -1,4 +1,62 @@
-# AeroGuard - Production-Ready Flask Backend
+# AeroGuard
+
+**Air Quality Forecasting System with Machine Learning**
+
+A production-ready Flask backend for predicting air quality (AQI, PM2.5, PM10, etc.) using ensemble ML models and SARIMA time-series forecasting.
+
+## 📁 Project Structure
+
+```
+AeroGuard/
+├── app/                      # Flask application package
+│   ├── __init__.py          # App factory and configuration
+│   ├── config.py            # Environment-based settings
+│   ├── models/              # ML model implementations
+│   │   ├── forecast_model.py    # Sklearn ensemble (RF + XGBoost)
+│   │   └── sarima_model.py      # SARIMA time-series model
+│   ├── services/            # Business logic layer
+│   │   ├── forecasting_service.py   # Forecast orchestration
+│   │   ├── data_service.py          # Data retrieval
+│   │   └── data_preprocessing.py    # Data ingestion & preprocessing
+│   ├── routes/              # REST API endpoints
+│   │   ├── health.py        # Health check endpoint
+│   │   ├── forecast.py      # Forecast endpoints
+│   │   └── model.py         # Model management endpoints
+│   └── utils/               # Utilities and helpers
+│       ├── validators.py    # Input validation
+│       ├── error_handlers.py    # Error handling
+│       ├── preprocessors.py     # Feature engineering
+│       └── timeseries_preprocessor.py  # Time-series specific
+│
+├── tests/                   # Test suite
+│   ├── test_api.py         # API integration tests
+│   ├── test_timeseries.py  # Time-series module tests
+│   └── test_sarima_model.py    # SARIMA model tests
+│
+├── examples/               # Example scripts and sample data
+│   ├── timeseries_examples.py  # Time-series usage examples
+│   ├── sample_*.csv        # Sample datasets
+│   └── preprocessed_aq_data.*  # Example preprocessed outputs
+│
+├── docs/                   # Documentation
+│   ├── DEVELOPMENT.md      # Development guide
+│   ├── GETTING_STARTED.md  # Quick start guide
+│   ├── SETUP_SUMMARY.md    # Setup instructions
+│   ├── TIMESERIES_PREPROCESSING.md     # API reference
+│   ├── TIMESERIES_QUICK_REFERENCE.md   # Quick lookup
+│   ├── PROJECT_STRUCTURE.md    # Detailed structure
+│   ├── PROJECT_SUMMARY.py      # Project overview
+│   └── TIMESERIES_IMPLEMENTATION_SUMMARY.md
+│
+├── docker-compose.yml      # Docker Compose configuration
+├── Dockerfile              # Container image definition
+├── requirements.txt        # Python dependencies
+├── run.py                  # Development server starter
+├── wsgi.py                 # Production WSGI entry point
+├── quickstart.py           # Quick demo script
+├── .env.example            # Environment variables template
+└── INDEX.md                # Project index
+``` - Production-Ready Flask Backend
 
 AI-based air quality forecasting system with machine learning predictions for PM2.5, PM10, NO₂, O₃, SO₂, and CO.
 
