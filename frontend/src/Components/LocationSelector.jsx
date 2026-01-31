@@ -18,11 +18,14 @@ export default function LocationSearch({ onSelect }) {
     setLoading(true);
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-          text
-        )}&format=json&limit=5`
-      );
-
+          `https://nominatim.openstreetmap.org/search` +
+          `?q=${encodeURIComponent(text)}` +
+          `&format=json` +
+          `&limit=5` +
+          `&countrycodes=in` +        // 🔒 India only
+          `&bounded=1` +              // 🔒 hard boundary
+          `&viewbox=68.7,37.1,97.25,6.5` // 🔒 India bounding box
+        );
       const data = await res.json();
 
       setResults(

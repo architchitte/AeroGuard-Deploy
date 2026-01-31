@@ -7,7 +7,7 @@ export default function PersonalizedHealthAdvice() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl p-6 shadow-2xl border border-slate-700">
+    <div className=".bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl p-6 shadow-2xl border border-slate-700">
       <div className="flex items-center gap-2 mb-6">
         <h3 className="text-lg font-bold text-white">Personalized Health Advice</h3>
         <span className="text-xl">💚</span>

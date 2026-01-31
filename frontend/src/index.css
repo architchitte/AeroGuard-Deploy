@@ -59,6 +59,19 @@ h6 {
   color: transparent;
 }
 
+.leaflet-tooltip.aqi-tooltip {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.leaflet-tooltip.aqi-tooltip .tooltip-title {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
 
 /* Scrollbar */
 ::-webkit-scrollbar {

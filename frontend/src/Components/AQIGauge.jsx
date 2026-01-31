@@ -27,7 +27,7 @@ export default function AQIGauge({ value, size = "lg", updatedAt }) {
         <div className={`absolute inset-0 ${status.glow} blur-3xl rounded-full`} />
 
         <div
-          className={`relative ${sizeClasses} rounded-full bg-gradient-to-br from-slate-900 to-slate-800 border-4 ${status.ring} flex items-center justify-center shadow-2xl`}
+          className={`relative ${sizeClasses} rounded-full .bg-gradient-to-br from-slate-900 to-slate-800 border-4 ${status.ring} flex items-center justify-center shadow-2xl`}
         >
           <div className="text-center">
             <p className={`font-bold ${status.color}`}>{value}</p>
