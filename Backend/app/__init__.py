@@ -160,11 +160,13 @@ def _register_blueprints(app):
     - forecast.bp: Air quality forecasting (/api/v1/forecast)
     - model.bp: Model management (/api/v1/model)
     - model_comparison_bp: Model comparison (/api/v1/model/compare)
+    - realtime_aqi.bp: Real-time AQI data (/api/v1/realtime-aqi)
 
     Args:
         app (Flask): Flask application instance
     """
     from app.routes import user as user_routes
+    from app.routes import realtime_aqi as realtime_aqi_routes
 
     blueprints = [
         (health.bp, "Health Check"),
@@ -172,6 +174,7 @@ def _register_blueprints(app):
         (model.bp, "Model Management"),
         (model_comparison_bp, "Model Comparison"),
         (user_routes.bp, "User API"),
+        (realtime_aqi_routes.bp, "Real-time AQI"),
     ]
 
     try:
