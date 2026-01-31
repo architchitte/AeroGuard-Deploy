@@ -20,7 +20,7 @@ class RealtimeAQIService:
     def __init__(self):
         """Initialize the service with API credentials."""
         self.api_key = os.getenv('REALTIME_AQI_API_KEY')
-        self.base_url = os.getenv('REALTIME_AQI_BASE_URL', 'https://api.waqi.info/v2')
+        self.base_url = os.getenv('REALTIME_AQI_BASE_URL', 'https://api.waqi.info')
         self.timeout = 10  # seconds
 
         if not self.api_key:
@@ -41,7 +41,7 @@ class RealtimeAQIService:
             return None
 
         try:
-            url = f"{self.base_url}/city/auto?token={self.api_key}&city={city}"
+            url = f"{self.base_url}/feed/{city}/?token={self.api_key}"
             response = requests.get(url, timeout=self.timeout)
             response.raise_for_status()
 
@@ -51,10 +51,10 @@ class RealtimeAQIService:
                 logger.warning(f"API returned non-ok status for {city}: {data.get('data')}")
                 return None
 
-            return self._parse_aqi_data(data.get('data', {}))
+                return self._parse_aqi_data(data.get('data', {}))
 
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to fetch AQI data for {city}: {str(e)}")
+        except Exception as e:
+            logger.error(f"Failed to fetch AQI for {city}: {e}")
             return None
         except Exception as e:
             logger.error(f"Error parsing AQI data for {city}: {str(e)}")
@@ -93,7 +93,7 @@ class RealtimeAQIService:
             return None
 
         try:
-            url = f"{self.base_url}/nearest?token={self.api_key}&lat={latitude}&lon={longitude}"
+            url = f"{self.base_url}/feed/geo:{latitude};{longitude}/?token={self.api_key}"
             response = requests.get(url, timeout=self.timeout)
             response.raise_for_status()
 
