@@ -239,7 +239,7 @@ export default function PollutionHeatmap() {
 
       {/* LEGEND */}
       <div className="absolute bottom-6 left-6 z-[1000] bg-slate-900/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl">
-        <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-wider">AQI Scale</h4>
+        {/* <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-wider">AQI Scale</h4>
         <div className="space-y-2">
           {[
             { label: 'Good', range: '0 - 50', color: '#10b981' },
@@ -255,7 +255,7 @@ export default function PollutionHeatmap() {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {/* ================= SEARCH PANEL ================= */}

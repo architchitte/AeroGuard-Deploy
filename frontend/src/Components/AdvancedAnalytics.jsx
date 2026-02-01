@@ -49,6 +49,22 @@ export default function AdvancedAnalytics({ location, persona }) {
         .sort((a, b) => b[1] - a[1])[0][0];
     };
 
+  const DarkTooltip = ({ active, payload }) => {
+      if (active && payload && payload.length) {
+        const { feature, score } = payload[0].payload;
+
+        return (
+          <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 shadow-xl">
+            <p className="font-semibold">{feature}</p>
+            <p className="text-pink-400 mt-1">
+              Impact Score: {(score * 10).toFixed(1)} / 10
+            </p>
+          </div>
+        );
+      }
+      return null;
+    };  
+
   /* ================= INIT ================= */
   useEffect(() => {
       const fetchHistory = async () => {
@@ -190,19 +206,34 @@ export default function AdvancedAnalytics({ location, persona }) {
 
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart layout="vertical" data={featureImportance}>
-              <XAxis type="number" hide />
+            <BarChart
+              layout="vertical"
+              data={featureImportance.map(f => ({
+                ...f,
+                visualScore: f.score * 100, // 🔥 THIS IS THE METER
+              }))}
+              margin={{ left: 20 }}
+            >
+              <XAxis
+                type="number"
+                domain={[0, 100]}
+                tick={{ fill: "#64748b", fontSize: 10 }}
+                tickFormatter={(v) => `${Math.round(v / 10)}/10`}
+              />
               <YAxis
                 dataKey="feature"
                 type="category"
-                width={120}
-                fontSize={10}
+                width={140}
+                tick={{ fill: "#94a3b8", fontSize: 11 }}
               />
-              <Tooltip />
+
+              <Tooltip content={<DarkTooltip />} />
+
               <Bar
-                dataKey="score"
+                dataKey="visualScore"
+                radius={[0, 8, 8, 0]}
                 fill="#ec4899"
-                radius={[0, 4, 4, 0]}
+                isAnimationActive
               />
             </BarChart>
           </ResponsiveContainer>
