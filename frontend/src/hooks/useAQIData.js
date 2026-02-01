@@ -1,45 +1,45 @@
-import { useState, useEffect } from 'react';
-import { dashboardService } from '../api/dashboardService';
+// useAQIData.js
+import { useState, useEffect } from "react";
+import { dashboardService } from "../api/dashboardService";
 
 export const useAQIData = (city, persona) => {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    useEffect(() => {
-        if (!city || !persona) return;
+  useEffect(() => {
+    if (!city) return;
 
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const result = await dashboardService.getOverview(city, persona);
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
 
-                /* ✅ ADDITION: normalize pollutants ONLY */
-                const normalizedPollutants = result?.pollutants
-                  ? {
-                      pm25: { value: result.pollutants["PM2.5"] ?? 0 },
-                      pm10: { value: result.pollutants["PM10"] ?? 0 },
-                      no2:  { value: result.pollutants["NO2"] ?? 0 },
-                      o3:   { value: result.pollutants["O3"] ?? 0 },
-                      so2:  { value: result.pollutants["SO2"] ?? 0 },
-                      co:   { value: result.pollutants["CO"] ?? 0 },
-                    }
-                  : {};
+      try {
+        const result = await dashboardService.getOverview(city, persona);
 
-                setData({
-                    ...result,
-                    pollutants: normalizedPollutants, // 👈 injected here
-                });
-            } catch (err) {
-                setError(err.message || 'Failed to fetch AQI data');
-            } finally {
-                setLoading(false);
-            }
-        };
+        /* ✅ Normalize 6-hour forecast */
+        const forecast6h = (result.forecast_6h || []).map((item) => ({
+          time: item.time
+            ?? new Date(item.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          aqi: Number(item.aqi),
+        }));
 
-        fetchData();
-    }, [city, persona]);
+        setData({
+          ...result,
+          forecast_6h: forecast6h, // 👈 guaranteed format
+        });
+      } catch (err) {
+        setError(err.message || "Failed to fetch AQI data");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return { data, loading, error };
+    fetchData();
+  }, [city, persona]);
+
+  return { data, loading, error };
 };

@@ -31,7 +31,7 @@ def _get_services():
     return _forecast_service, _data_service
 
 
-@bp.route("", methods=["POST"])
+@bp.route("", methods=["GET", "POST"])
 def generate_forecast():
     """
     Generate air quality forecast.
@@ -181,6 +181,50 @@ def get_current_conditions(location_id: str):
             {"status": "error", "message": e.message, "code": 400}
         ), 400
     except Exception as e:
+        return jsonify(
+            {"status": "error", "message": str(e), "code": 500}
+        ), 500
+
+@bp.route("/<location_id>/6h", methods=["GET"])
+def get_6h_forecast(location_id: str):
+    """
+    Get 6-hour AQI forecast for a specific location.
+
+    Returns:
+        JSON with hourly AQI predictions for next 6 hours
+    """
+    try:
+        # Validate location id
+        is_valid, error_msg = InputValidator.validate_location_id(location_id)
+        if not is_valid:
+            raise ValidationError(error_msg)
+
+        forecast_service, data_service = _get_services()
+
+        # Validate location exists
+        is_valid, msg = data_service.validate_location(location_id)
+        if not is_valid:
+            raise ValidationError(msg)
+
+        # Fetch short historical window (last 48h is enough)
+        historical_data = data_service.fetch_historical_data(
+            location_id, days=2
+        )
+
+        # 🔥 CALL YOUR 6H FORECAST METHOD
+        forecast_result = forecast_service.generate_6h_forecast(
+            location_id=location_id,
+            historical_data=historical_data,
+        )
+
+        return jsonify(forecast_result), 200
+
+    except ValidationError as e:
+        return jsonify(
+            {"status": "error", "message": e.message, "code": 400}
+        ), 400
+    except Exception as e:
+        current_app.logger.exception("6H forecast failed")
         return jsonify(
             {"status": "error", "message": str(e), "code": 500}
         ), 500

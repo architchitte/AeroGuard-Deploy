@@ -188,6 +188,7 @@ class RealtimeAQIService:
             return "Hazardous"
 
 
+
 # Popular Indian cities for quick access
 POPULAR_INDIAN_CITIES = [
     "Delhi",

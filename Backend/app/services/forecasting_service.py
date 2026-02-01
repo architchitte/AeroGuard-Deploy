@@ -437,6 +437,61 @@ class ForecastingService:
             "forecasts": forecasts,
             "is_demo": True
         }
+    
+    def generate_6h_forecast(
+        self,
+        location_id: str,
+        historical_data: Optional[np.ndarray] = None,
+    ) -> Dict:
+        """
+        Generate 6-hour hourly AQI forecast.
+        """
+
+        hours = 6
+        now = datetime.now()
+
+        # ===== FALLBACK (model not trained) =====
+        if self.model is None or not getattr(self.model, "is_trained", False):
+            base = np.random.randint(80, 140)
+
+            return {
+                "location_id": location_id,
+                "hours": hours,
+                "model_type": "simulation",
+                "forecast": [
+                    {
+                        "hour": (now + timedelta(hours=i)).strftime("%I %p"),
+                        "aqi": int(base + np.random.normal(0, 8)),
+                        "trend": "up" if i > 0 else "stable",
+                    }
+                    for i in range(hours)
+                ],
+            }
+
+        # ===== REAL MODEL PATH =====
+        if historical_data is None:
+            historical_data = self._get_mock_historical_data()
+
+        # Prepare features for HOURLY prediction
+        features = self.preprocessor.prepare_features(historical_data, hours)
+
+        preds = self.model.predict(features, parameter="aqi")
+
+        forecast = []
+        for i in range(hours):
+            forecast.append({
+                "hour": (now + timedelta(hours=i)).strftime("%I %p"),
+                "aqi": int(preds[i]),
+                "trend": "up" if i > 0 and preds[i] > preds[i - 1] else "down",
+            })
+
+        return {
+            "location_id": location_id,
+            "hours": hours,
+            "model_type": "ensemble",
+            "forecast": forecast,
+        }
+
 
     def _get_mock_historical_data(self) -> np.ndarray:
         """
