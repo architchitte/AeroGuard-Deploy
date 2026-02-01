@@ -1,506 +1,256 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
-    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
 import {
-    BrainCircuit, TrendingUp, AlertTriangle, Activity, Database, CheckCircle, Calendar, Clock, BarChart3, Wind, Server, Wifi, WifiOff
+  BrainCircuit,
+  TrendingUp,
+  AlertTriangle,
+  Activity,
+  Database,
+  CheckCircle,
+  Clock,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
+
 import { analyticsService } from "../api/analyticsService";
 import AeroIntelligenceBriefing from "./AeroIntelligenceBriefing";
 
-// --- MOCK DATA ---
+/* ================= CONSTANTS ================= */
 
-// 1. Historical Trends (Generated for flexibility)
-const generateHistoryData = (days) => {
-    const data = [];
-    const now = new Date();
-    for (let i = days; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        data.push({
-            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            pm25: Math.floor(Math.random() * 150) + 50,
-            pm10: Math.floor(Math.random() * 200) + 80,
-            no2: Math.floor(Math.random() * 80) + 20,
-            o3: Math.floor(Math.random() * 60) + 10,
-        });
-    }
-    return data;
-};
-
-// 2. Feature Importance
-const FEATURE_IMPORTANCE = [
-    { feature: "Previous AQI (t-1)", score: 0.85 },
-    { feature: "Wind Speed", score: 0.62 },
-    { feature: "Traffic Density", score: 0.58 },
-    { feature: "Humidity", score: 0.45 },
-    { feature: "Hour of Day", score: 0.38 },
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const TIME_SLOTS = ["Morning", "Afternoon", "Evening", "Night"];
+const HEATMAP_COLORS = [
+  "bg-teal-500/20",
+  "bg-yellow-500/20",
+  "bg-orange-500/40",
+  "bg-red-500/60",
 ];
 
-// 3. Model Comparison Metrics
-const MODEL_METRICS = {
-    6: {
-        sarima: { prediction: 145, mae: 12.4, rmse: 15.2, r2: 0.82, uncertainty: 15 },
-        xgboost: { prediction: 142, mae: 8.5, rmse: 10.1, r2: 0.89, uncertainty: 8 },
-        hybrid: { prediction: 143, mae: 5.2, rmse: 6.8, r2: 0.94, uncertainty: 5 },
-    },
-    12: {
-        sarima: { prediction: 160, mae: 18.1, rmse: 22.5, r2: 0.75, uncertainty: 25 },
-        xgboost: { prediction: 155, mae: 14.2, rmse: 18.3, r2: 0.81, uncertainty: 15 },
-        hybrid: { prediction: 158, mae: 9.8, rmse: 12.4, r2: 0.88, uncertainty: 10 },
-    },
-    24: {
-        sarima: { prediction: 185, mae: 25.4, rmse: 30.1, r2: 0.65, uncertainty: 40 },
-        xgboost: { prediction: 175, mae: 20.5, rmse: 24.8, r2: 0.72, uncertainty: 25 },
-        hybrid: { prediction: 180, mae: 15.2, rmse: 18.5, r2: 0.81, uncertainty: 18 },
-    }
-};
-
-// 4. Pollutant Composition
-const POLLUTANT_COMPOSITION = [
-    { name: 'PM2.5', value: 45, color: '#f43f5e' },
-    { name: 'PM10', value: 30, color: '#f97316' },
-    { name: 'NO2', value: 15, color: '#eab308' },
-    { name: 'O3', value: 10, color: '#14b8a6' },
-];
-
-// 5. Heatmap Data (Day x Hour)
-const HEATMAP_DATA = Array.from({ length: 7 }, (_, day) =>
-    Array.from({ length: 4 }, (_, slot) => Math.floor(Math.random() * 4)) // 0: Low, 1: Mod, 2: High, 3: Haz
-);
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const TIME_SLOTS = ['Morning', 'Afternoon', 'Evening', 'Night'];
-const HEATMAP_COLORS = ['bg-teal-500/20', 'bg-yellow-500/20', 'bg-orange-500/40', 'bg-red-500/60'];
+/* ================= COMPONENT ================= */
 
 export default function AdvancedAnalytics({ location, persona }) {
-    const cityName = location?.name || 'Mumbai';
-    const [timeRange, setTimeRange] = useState(14);
-    const [forecastHorizon, setForecastHorizon] = useState(6);
-    const [selectedPollutant, setSelectedPollutant] = useState('pm25');
+  const cityName = location?.name || "Mumbai";
 
-    // Backend Integration State
-    const [backendStatus, setBackendStatus] = useState('checking');
-    const [availableModels, setAvailableModels] = useState([]);
+  /* -------- UI State -------- */
+  const [timeRange, setTimeRange] = useState(14);
+  const [forecastHorizon, setForecastHorizon] = useState(6);
+  const [selectedPollutant, setSelectedPollutant] = useState("pm25");
 
-    // Data State
-    const [historyData, setHistoryData] = useState([]);
-    const [metrics, setMetrics] = useState({
-        sarima: { prediction: 0, mae: 0, rmse: 0, r2: 0, uncertainty: 0 },
-        xgboost: { prediction: 0, mae: 0, rmse: 0, r2: 0, uncertainty: 0 },
-        hybrid: { prediction: 0, mae: 0, rmse: 0, r2: 0, uncertainty: 0 }
-    });
-    const [featureImportance, setFeatureImportance] = useState([]);
-    const [pollutantComposition, setPollutantComposition] = useState([]);
-    const [currentAqi, setCurrentAqi] = useState(100);
+  /* -------- System State -------- */
+  const [backendStatus, setBackendStatus] = useState("checking");
 
-    // 1. Initial System Check
-    useEffect(() => {
-        const init = async () => {
-            const health = await analyticsService.checkHealth();
-            setBackendStatus(health.status === 'healthy' ? 'online' : 'offline');
+  /* -------- Data State -------- */
+  const [historyData, setHistoryData] = useState([]);
+  const [metrics, setMetrics] = useState({
+    sarima: {},
+    xgboost: {},
+    hybrid: {},
+  });
+  const [featureImportance, setFeatureImportance] = useState([]);
+  const [pollutantComposition, setPollutantComposition] = useState([]);
+  const [heatmapData, setHeatmapData] = useState([]);
+  const [currentAqi, setCurrentAqi] = useState(null);
 
-            const models = await analyticsService.getAvailableModels();
-            setAvailableModels(models);
+  /* ================= INIT ================= */
 
-            const composition = await analyticsService.getPollutantComposition(cityName);
-            setPollutantComposition(composition);
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const health = await analyticsService.checkHealth();
+        setBackendStatus(health?.status === "healthy" ? "online" : "offline");
 
-            // Fetch current AQI from history
-            try {
-                const history = await analyticsService.getHistoricalAnalysis(1, cityName);
-                if (history && history.length > 0) {
-                    setCurrentAqi(history[history.length - 1].aqi || 100);
-                }
-            } catch (e) {
-                console.warn("Failed to fetch current AQI in analytics", e);
-            }
+        const features = await analyticsService.getFeatureImportance();
+        setFeatureImportance(features || []);
 
-            const features = await analyticsService.getFeatureImportance();
-            setFeatureImportance(features);
-        };
-        init();
-    }, [cityName]);
+        const composition =
+          await analyticsService.getPollutantComposition(cityName);
+        setPollutantComposition(composition || []);
 
-    // 2. Fetch History when timeRange or city changes
-    useEffect(() => {
-        const fetchHistory = async () => {
-            const data = await analyticsService.getHistoricalAnalysis(timeRange, cityName);
-            setHistoryData(data);
-        };
-        fetchHistory();
-    }, [timeRange, cityName]);
+        const heatmap =
+          await analyticsService.getTemporalHeatmap(cityName);
+        setHeatmapData(heatmap || []);
 
-    // 3. Fetch Metrics when historyData or horizon changes
-    useEffect(() => {
-        const fetchMetrics = async () => {
-            if (historyData && historyData.length >= 20) {
-                const data = await analyticsService.runModelComparison(historyData, forecastHorizon);
-                setMetrics(data);
-            } else {
-                const data = await analyticsService.getModelMetrics(forecastHorizon);
-                setMetrics(data);
-            }
-        };
-        fetchMetrics();
-    }, [historyData, forecastHorizon]);
+      } catch (err) {
+        console.warn("Analytics init failed", err);
+        setBackendStatus("offline");
+      }
+    };
 
-    return (
-        <div className="w-full space-y-8 text-slate-300">
+    init();
+  }, [cityName]);
 
-            {/* Backend Status Indicator */}
-            <div className="flex justify-end items-center gap-2 text-xs mb-4">
-                <span className="text-slate-500">Analytics Engine:</span>
-                {backendStatus === 'online' ? (
-                    <span className="flex items-center gap-1.5 text-green-400 font-bold bg-green-500/10 px-2.5 py-1 rounded-full border border-green-500/20">
-                        <Wifi size={12} /> ONLINE
-                    </span>
-                ) : backendStatus === 'checking' ? (
-                    <span className="flex items-center gap-1.5 text-yellow-400 font-bold bg-yellow-500/10 px-2.5 py-1 rounded-full border border-yellow-500/20 animate-pulse">
-                        <Activity size={12} /> CONNECTING...
-                    </span>
-                ) : (
-                    <span className="flex items-center gap-1.5 text-red-400 font-bold bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20">
-                        <WifiOff size={12} /> OFFLINE (Demo Mode)
-                    </span>
-                )}
-            </div>
+  /* ================= HISTORY ================= */
 
-            {/* AI Powered Insights Briefing */}
-            <AeroIntelligenceBriefing city={cityName} persona={persona || 'general'} />
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const data = await analyticsService.getHistoricalAnalysis(
+        timeRange,
+        cityName
+      );
+      setHistoryData(data || []);
 
-            {/* 1. CHART: Historical Trends */}
-            <div className="glass-panel p-6 rounded-3xl border border-white/10">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div>
-                        <h3 className="text-xl font-display font-bold text-white flex items-center gap-2">
-                            <TrendingUp className="text-neon-teal" /> Historical Trend Analysis
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1">Observed pollutant levels over selected timeframe.</p>
-                    </div>
+      if (data?.length) {
+        setCurrentAqi(data[data.length - 1]?.aqi ?? null);
+      }
+    };
 
-                    <div className="flex flex-wrap gap-2">
-                        <select
-                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-1 text-xs focus:ring-1 focus:ring-neon-teal outline-none"
-                            value={timeRange}
-                            onChange={(e) => setTimeRange(Number(e.target.value))}
-                        >
-                            <option value={7}>Last 7 Days</option>
-                            <option value={14}>Last 14 Days</option>
-                            <option value={30}>Last 30 Days</option>
-                            <option value={90}>Last 3 Months</option>
-                        </select>
+    fetchHistory();
+  }, [timeRange, cityName]);
 
-                        <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
-                            {['pm25', 'pm10', 'no2', 'o3'].map(p => (
-                                <button
-                                    key={p}
-                                    onClick={() => setSelectedPollutant(p)}
-                                    className={`px-3 py-1 rounded text-xs font-bold transition-all uppercase ${selectedPollutant === p ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
-                                >
-                                    {p}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+  /* ================= METRICS ================= */
 
-                <div className="w-full h-[300px] min-h-[300px] min-w-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={historyData}>
-                            <defs>
-                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                            <XAxis dataKey="date" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} label={{ value: 'Concentration (µg/m³)', angle: -90, position: 'insideLeft', style: { fill: '#475569', fontSize: 10 } }} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#020617', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                itemStyle={{ color: '#fff' }}
-                            />
-                            <Area type="monotone" dataKey={selectedPollutant} stroke="#6366f1" fillOpacity={1} fill="url(#colorValue)" strokeWidth={2} />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (historyData.length >= 20) {
+        const data = await analyticsService.runModelComparison(
+          historyData,
+          forecastHorizon
+        );
+        setMetrics(data || {});
+      } else {
+        const data = await analyticsService.getModelMetrics(forecastHorizon);
+        setMetrics(data || {});
+      }
+    };
 
-            {/* 2. FORECASTING MODELS COMPARISON */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Controls Header (Spans full width visually) */}
-                <div className="lg:col-span-3 flex justify-between items-center">
-                    <h3 className="text-xl font-display font-bold text-white flex items-center gap-2">
-                        <BrainCircuit className="text-purple-400" /> Forecasting Models Leaderboard
-                    </h3>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500">Forecast Horizon:</span>
-                        <select
-                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-1 text-xs text-white outline-none focus:border-purple-500"
-                            value={forecastHorizon}
-                            onChange={(e) => setForecastHorizon(Number(e.target.value))}
-                        >
-                            <option value={6}>Next 6 Hours</option>
-                            <option value={12}>Next 12 Hours</option>
-                            <option value={24}>Next 24 Hours</option>
-                        </select>
-                    </div>
-                </div>
+    fetchMetrics();
+  }, [historyData, forecastHorizon]);
 
-                {/* Model Cards */}
-                {(() => {
-                    const modelConfigs = [
-                        { id: 'sarima', name: 'SARIMA (Statistical)', color: 'border-cyan-500/50', text: 'text-cyan-400', bg: 'bg-cyan-950/20' },
-                        { id: 'xgboost', name: 'XGBoost (ML)', color: 'border-purple-500/50', text: 'text-purple-400', bg: 'bg-purple-950/20' },
-                        { id: 'hybrid', name: 'AeroGuard Hybrid', color: 'border-orange-500/50', text: 'text-orange-400', bg: 'bg-orange-950/20' }
-                    ];
+  /* ================= RENDER ================= */
 
-                    // Find winner based on lowest MAE (if metrics available)
-                    let winnerId = 'hybrid'; // Default
-                    if (metrics.sarima.mae > 0 && metrics.xgboost.mae > 0 && metrics.hybrid.mae > 0) {
-                        const maes = {
-                            sarima: parseFloat(metrics.sarima.mae),
-                            xgboost: parseFloat(metrics.xgboost.mae),
-                            hybrid: parseFloat(metrics.hybrid.mae)
-                        };
-                        winnerId = Object.keys(maes).reduce((a, b) => maes[a] < maes[b] ? a : b);
-                    }
+  return (
+    <div className="w-full space-y-8 text-slate-300">
 
-                    return modelConfigs.map(model => (
-                        <div key={model.id} className={`glass-panel p-6 rounded-2xl border ${model.id === winnerId ? 'border-orange-500/50 bg-orange-950/20' : model.color + ' ' + model.bg} relative overflow-hidden group transition-all duration-300`}>
-                            {model.id === winnerId && (
-                                <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg shadow-lg z-10 animate-pulse">
-                                    TOP PERFORMER
-                                </div>
-                            )}
-                            <h4 className={`text-sm font-bold ${model.text} mb-4 flex items-center gap-2`}>
-                                {model.name}
-                            </h4>
+      {/* ---------- Backend Status ---------- */}
+      <div className="flex justify-end items-center gap-2 text-xs">
+        <span className="text-slate-500">Analytics Engine:</span>
+        {backendStatus === "online" ? (
+          <span className="flex items-center gap-1.5 text-green-400 font-bold bg-green-500/10 px-2.5 py-1 rounded-full border border-green-500/20">
+            <Wifi size={12} /> ONLINE
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-red-400 font-bold bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20">
+            <WifiOff size={12} /> OFFLINE
+          </span>
+        )}
+      </div>
 
-                            <div className="flex items-end justify-between mb-4">
-                                <div>
-                                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Predicted AQI</span>
-                                    <p className="text-4xl font-display font-bold text-white mt-1">
-                                        {metrics[model.id].prediction}
-                                        <span className="text-xs text-slate-500 ml-2 font-normal">± {metrics[model.id].uncertainty}</span>
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="radial-progress text-xs" style={{ "--value": metrics[model.id].r2 * 100, "--size": "2rem" }} role="progressbar">
-                                        {(metrics[model.id].r2 * 100).toFixed(0)}%
-                                    </div>
-                                </div>
-                            </div>
+      {/* ---------- AI BRIEFING ---------- */}
+      <AeroIntelligenceBriefing
+        city={cityName}
+        persona={persona || "general"}
+      />
 
-                            <div className="space-y-2 pt-4 border-t border-white/5">
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-slate-400">RMSE (Error):</span>
-                                    <span className="text-white font-mono">{metrics[model.id].rmse}</span>
-                                </div>
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-slate-400">MAE (Accuracy):</span>
-                                    <span className="text-white font-mono">{metrics[model.id].mae}</span>
-                                </div>
-                                <div className="w-full bg-black/40 rounded-full h-1 mt-2 overflow-hidden">
-                                    <div
-                                        className={`h-full ${model.text.replace('text', 'bg')}`}
-                                        style={{ width: `${metrics[model.id].r2 * 100}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                })()}
-            </div>
+      {/* ---------- HISTORICAL TREND ---------- */}
+      <div className="glass-panel p-6 rounded-3xl border border-white/10">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <TrendingUp className="text-neon-teal" /> Historical Trends
+          </h3>
 
-            {/* 3. FEATURE IMPORTANCE & BREAKDOWN */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                {/* Feature Importance */}
-                <div className="glass-panel p-6 rounded-3xl border border-white/10">
-                    <h3 className="text-md font-bold text-white mb-6 flex items-center gap-2">
-                        <Activity size={18} className="text-pink-400" /> Explainable AI (XAI)
-                    </h3>
-                    <div className="w-full h-[250px] min-h-[250px] min-w-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={featureImportance} margin={{ left: 40 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
-                                <XAxis type="number" hide />
-                                <YAxis dataKey="feature" type="category" width={100} tick={{ fill: '#94a3b8', fontSize: 10 }} tickLine={false} axisLine={false} />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#020617', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                />
-                                <Bar dataKey="score" fill="#ec4899" radius={[0, 4, 4, 0]} barSize={20} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Pollutant Breakdown & Heatmap */}
-                <div className="space-y-6">
-
-                    {/* Breakdown */}
-                    <div className="glass-panel p-5 rounded-3xl border border-white/10 flex items-center gap-6">
-                        <div className="w-32 h-32 flex-shrink-0 min-w-0">
-                            {pollutantComposition && pollutantComposition.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={pollutantComposition}
-                                            innerRadius={30}
-                                            outerRadius={50}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                        >
-                                            {pollutantComposition.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="rgba(0,0,0,0.5)" />
-                                            ))}
-                                        </Pie>
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="w-full h-full rounded-full border-4 border-white/5 border-t-indigo-500 animate-spin" />
-                            )}
-                        </div>
-                        <div className="flex-1 space-y-2">
-                            <h4 className="text-sm font-bold text-white">Pollutant Ratios</h4>
-                            <div className="grid grid-cols-2 gap-2">
-                                {pollutantComposition.map(p => (
-                                    <div key={p.name} className="flex items-center gap-2 text-xs text-slate-400">
-                                        <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-                                        <span>{p.name} ({p.value}%)</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Pattern Heatmap Matrix */}
-                    <div className="glass-panel p-5 rounded-3xl border border-white/10">
-                        <div className="flex justify-between items-center mb-3">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase">Temporal Density</h4>
-                            <div className="flex gap-1">
-                                {['Low', 'Mod', 'High', 'Haz'].map((l, i) => (
-                                    <div key={l} className={`w-2 h-2 rounded-full ${HEATMAP_COLORS[i]}`} title={l} />
-                                ))}
-                            </div>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <div className="grid grid-cols-[auto_repeat(4,1fr)] gap-1 min-w-[300px]">
-                                {/* Header */}
-                                <div className="text-[9px] text-slate-600"></div>
-                                {TIME_SLOTS.map(t => <div key={t} className="text-[9px] text-center text-slate-500 font-medium">{t.slice(0, 3)}</div>)}
-
-                                {/* Rows */}
-                                {DAYS.map((day, dIndex) => (
-                                    <React.Fragment key={day}>
-                                        <div className="text-[10px] text-slate-400 font-medium py-1">{day}</div>
-                                        {HEATMAP_DATA[dIndex].map((intensity, hIndex) => (
-                                            <div
-                                                key={`${day}-${hIndex}`}
-                                                className={`rounded-md h-full w-full min-h-[20px] ${HEATMAP_COLORS[intensity]} transition-all hover:brightness-125 cursor-help`}
-                                                title={`${day} ${TIME_SLOTS[hIndex]}: Level ${intensity}`}
-                                            />
-                                        ))}
-                                    </React.Fragment>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            {/* 4. HEALTH IMPACT & DATA QUALITY */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Persona Risk Table */}
-                <div className="lg:col-span-3 glass-panel p-6 rounded-3xl border border-white/10">
-                    <h3 className="text-md font-bold text-white mb-4 flex items-center gap-2">
-                        <AlertTriangle size={18} className="text-orange-400" /> Exposure Risk Assessment
-                    </h3>
-                    <div className="overflow-x-auto">
-                        {(() => {
-                            const getPersonaRisk = (id, aqi) => {
-                                const baseRisks = {
-                                    vulnerable: { multiplier: 1.5, threshold: 50 },
-                                    outdoor: { multiplier: 1.2, threshold: 80 },
-                                    general: { multiplier: 1.0, threshold: 100 }
-                                };
-                                const risk = baseRisks[id];
-                                const effectiveAqi = aqi * risk.multiplier;
-
-                                if (effectiveAqi < 50) return { risk: 'Low', exposure: 'Unlimited', symptom: 'No special precautions', color: 'text-neon-teal', bg: 'bg-teal-500/10', border: 'border-teal-500/20' };
-                                if (effectiveAqi < 120) return { risk: 'Moderate', exposure: '2-4 Hours', symptom: 'Monitor air quality', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' };
-                                if (effectiveAqi < 200) return { risk: 'High', exposure: '45-90 mins', symptom: 'Limit outdoor exertion', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' };
-                                return { risk: 'Critical', exposure: '< 20 mins', symptom: 'Avoid outdoor activities', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
-                            };
-
-                            const riskData = [
-                                { id: 'vulnerable', label: 'Children & Elderly' },
-                                { id: 'outdoor', label: 'Outdoor Athletes' },
-                                { id: 'general', label: 'General Public' },
-                            ].map(group => ({
-                                ...group,
-                                ...getPersonaRisk(group.id, currentAqi)
-                            }));
-
-                            return (
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="text-xs text-slate-500 border-b border-white/5">
-                                            <th className="py-2 font-medium">Population Group</th>
-                                            <th className="py-2 font-medium">Risk Level</th>
-                                            <th className="py-2 font-medium">Max Exposure (Est.)</th>
-                                            <th className="py-2 font-medium">Primary Precaution</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="text-sm">
-                                        {riskData.map(group => (
-                                            <tr key={group.id} className={`border-b border-white/5 group transition-all duration-300 ${persona === group.id ? 'bg-indigo-500/10' : 'hover:bg-white/5'}`}>
-                                                <td className={`py-3 font-medium ${persona === group.id ? 'text-indigo-400' : 'text-white'}`}>
-                                                    {group.label} {persona === group.id && <span className="text-[10px] ml-2 font-bold bg-indigo-500 text-white px-1.5 py-0.5 rounded">ACTIVE</span>}
-                                                </td>
-                                                <td className="py-3"><span className={`px-2 py-0.5 rounded ${group.bg} ${group.color} text-xs border ${group.border}`}>{group.risk}</span></td>
-                                                <td className="py-3 text-slate-400">{group.exposure}</td>
-                                                <td className="py-3 text-slate-400">{group.symptom}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            );
-                        })()}
-                    </div>
-                </div>
-
-                {/* Data Quality */}
-                <div className="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col justify-center items-center text-center">
-                    <div className="relative w-24 h-24 flex items-center justify-center mb-4">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                            <path className="text-slate-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                            <path className="text-neon-teal drop-shadow-lg" strokeDasharray="92, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                        </svg>
-                        <div className="absolute flex flex-col items-center">
-                            <span className="text-2xl font-bold text-white">92%</span>
-                            <span className="text-[8px] text-slate-500 uppercase">Confidence</span>
-                        </div>
-                    </div>
-
-                    <div className="w-full space-y-3">
-                        <div className="flex justify-between items-center text-xs border-b border-white/5 pb-2">
-                            <span className="text-slate-500 flex items-center gap-1"><Database size={10} /> Source</span>
-                            <span className="text-white font-mono">WAQI Live</span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs pb-1">
-                            <span className="text-slate-500 flex items-center gap-1"><Clock size={10} /> Latency</span>
-                            <span className="text-neon-teal font-mono">1.2s</span>
-                        </div>
-                        <div className="text-[10px] bg-green-500/10 text-green-400 py-1 rounded border border-green-500/20 w-full flex items-center justify-center gap-1">
-                            <CheckCircle size={10} /> System Operational
-                        </div>
-                    </div>
-                </div>
-            </div>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(Number(e.target.value))}
+            className="bg-black/40 border border-white/10 rounded-lg px-3 py-1 text-xs"
+          >
+            <option value={7}>7 Days</option>
+            <option value={14}>14 Days</option>
+            <option value={30}>30 Days</option>
+            <option value={90}>90 Days</option>
+          </select>
         </div>
-    );
+
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={historyData}>
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="date" fontSize={10} />
+              <YAxis fontSize={10} />
+              <Tooltip />
+              <Area
+                type="monotone"
+                dataKey={selectedPollutant}
+                stroke="#6366f1"
+                fill="#6366f1"
+                fillOpacity={0.2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ---------- FEATURE IMPORTANCE ---------- */}
+      <div className="glass-panel p-6 rounded-3xl border border-white/10">
+        <h3 className="text-md font-bold text-white mb-4">
+          Explainable AI (XAI)
+        </h3>
+
+        <div className="h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart layout="vertical" data={featureImportance}>
+              <XAxis type="number" hide />
+              <YAxis
+                dataKey="feature"
+                type="category"
+                width={120}
+                fontSize={10}
+              />
+              <Tooltip />
+              <Bar dataKey="score" fill="#ec4899" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ---------- HEATMAP ---------- */}
+      <div className="glass-panel p-6 rounded-3xl border border-white/10">
+        <h3 className="text-sm font-bold text-white mb-3">
+          Temporal Pollution Density
+        </h3>
+
+        <div className="grid grid-cols-[auto_repeat(4,1fr)] gap-1">
+          <div />
+          {TIME_SLOTS.map((t) => (
+            <div key={t} className="text-xs text-center text-slate-400">
+              {t}
+            </div>
+          ))}
+
+          {DAYS.map((day, d) => (
+            <React.Fragment key={day}>
+              <div className="text-xs text-slate-400">{day}</div>
+              {heatmapData?.[d]?.map((v, i) => (
+                <div
+                  key={i}
+                  className={`h-6 rounded ${HEATMAP_COLORS[v]}`}
+                />
+              ))}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {/* ---------- DATA QUALITY ---------- */}
+      <div className="glass-panel p-6 rounded-3xl border border-white/10 text-center">
+        <CheckCircle className="mx-auto text-neon-teal mb-2" />
+        <p className="text-sm text-white">Live data verified</p>
+        <p className="text-xs text-slate-500 flex justify-center gap-1 mt-1">
+          <Database size={12} /> WAQI • <Clock size={12} /> ~1s latency
+        </p>
+      </div>
+    </div>
+  );
 }

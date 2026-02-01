@@ -14,7 +14,23 @@ export const useAQIData = (city, persona) => {
             setError(null);
             try {
                 const result = await dashboardService.getOverview(city, persona);
-                setData(result);
+
+                /* ✅ ADDITION: normalize pollutants ONLY */
+                const normalizedPollutants = result?.pollutants
+                  ? {
+                      pm25: { value: result.pollutants["PM2.5"] ?? 0 },
+                      pm10: { value: result.pollutants["PM10"] ?? 0 },
+                      no2:  { value: result.pollutants["NO2"] ?? 0 },
+                      o3:   { value: result.pollutants["O3"] ?? 0 },
+                      so2:  { value: result.pollutants["SO2"] ?? 0 },
+                      co:   { value: result.pollutants["CO"] ?? 0 },
+                    }
+                  : {};
+
+                setData({
+                    ...result,
+                    pollutants: normalizedPollutants, // 👈 injected here
+                });
             } catch (err) {
                 setError(err.message || 'Failed to fetch AQI data');
             } finally {

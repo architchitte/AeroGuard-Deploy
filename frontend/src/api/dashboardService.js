@@ -75,14 +75,10 @@ export const dashboardService = {
                     category: aqiData.category || risk.level,
                     updated_at: aqiData.timestamp || new Date().toISOString()
                 },
-                pollutants: {
-                    pm25: { value: aqiData.pm25 || 0, trend: 'flat' }, // Backend might not have trend yet
-                    pm10: { value: aqiData.pm10 || 0, trend: 'flat' },
-                    no2: { value: aqiData.no2 || 0, trend: 'flat' },
-                    o3: { value: aqiData.o3 || 0, trend: 'flat' },
-                    so2: { value: aqiData.so2 || 0, trend: 'flat' },
-                    co: { value: aqiData.co || 0, trend: 'flat' }
-                },
+                pollutants: Object.fromEntries(Object.entries(aqiData.pollutants || {}).map(([key, value]) => [
+                    key,
+                    { value, trend: "flat" }
+                ])),
                 weather: {
                     // If API returns weather in 'metrics' or similar, use it. Otherwise mock.
                     temp: aqiData.temperature || 32,

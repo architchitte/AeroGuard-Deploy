@@ -115,7 +115,7 @@ export default function AeroIntelligenceBriefing({
   return (
     <div className="relative group">
       {/* Glow */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000" />
+      <div className="absolute -inset-0.5 .bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000" />
 
       <div className="relative glass-panel p-6 rounded-3xl border border-white/10 bg-black/40 overflow-hidden">
         {/* Header */}

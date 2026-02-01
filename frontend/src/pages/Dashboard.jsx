@@ -20,7 +20,7 @@ import CityHeatmap from "../Components/CityHeatmap";
 import LocationSearch from "../components/LocationSelector";
 import AeroIntelligenceBriefing from "../Components/AeroIntelligenceBriefing";
 import PersonalizedHealthAdvice from "../components/PersonalizedHealthAdvice";
-import ContributingFactors from "../Components/ContributingFactors";
+import AdvancedAnalytics from "../Components/AdvancedAnalytics";
 
 
 /* ---------------- PERSONAS ---------------- */
@@ -113,7 +113,7 @@ export default function Dashboard() {
   const pollutants = Object.entries(data.pollutants).map(([key, val]) => ({
     id: key,
     name: POLLUTANT_CONFIG[key]?.name || key,
-    value: val.value,
+    value: typeof val === "object" ? val.value : val,
     unit: POLLUTANT_CONFIG[key]?.unit || "",
   }));
 
@@ -173,7 +173,7 @@ export default function Dashboard() {
           <section className="lg:col-span-6 space-y-6">
 
             {/* AQI HERO */}
-            <div className="relative glass-panel p-8 rounded-2xl border border-white/10 h-[280px]">
+            <div className="relative glass-panel p-8 rounded-2xl border border-white/10 h-280px">
               <div
                 className={`absolute -top-20 -right-20 w-56 h-56 blur-[120px] opacity-20 ${
                   theme.color.includes("teal")
@@ -219,30 +219,51 @@ export default function Dashboard() {
 
             {/* POLLUTANTS */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {pollutants.map((p) => (
-                <div key={p.id} className="glass-panel p-4 rounded-xl">
-                  <p className="text-[10px] uppercase text-slate-500 mb-1">
-                    {p.name}
-                  </p>
+              {pollutants.map((p) => {
+                const SAFE_LIMITS = {
+                  pm25: 60,
+                  pm10: 100,
+                  no2: 40,
+                  o3: 70,
+                  so2: 20,
+                  co: 2,
+                };
 
-                  <div className="flex justify-between items-end">
-                    <p className="text-2xl font-bold text-white">
-                      {p.value}
+                const limit = SAFE_LIMITS[p.id] ?? 100;
+                const percent = Math.min(100, (p.value / limit) * 100);
+                const barColor =
+                  percent > 75
+                    ? "bg-red-500"
+                    : percent > 50
+                    ? "bg-orange-500"
+                    : "bg-neon-teal";
+
+                return (
+                  <div key={p.id} className="glass-panel p-4 rounded-xl">
+                    <p className="text-[10px] uppercase text-slate-500 mb-1">
+                      {p.name}
                     </p>
-                    <span className="text-xs text-slate-500">{p.unit}</span>
-                  </div>
 
-                  <div className="w-full bg-white/5 h-1 rounded-full mt-2">
-                    <div
-                      className={`h-full ${
-                        p.value > 100 ? "bg-orange-500" : "bg-neon-teal"
-                      }`}
-                      style={{ width: `${Math.min(100, (p.value / 250) * 100)}%` }}
-                    />
+                    <div className="flex justify-between items-end">
+                      <p className="text-2xl font-bold text-white">
+                        {p.value}
+                      </p>
+                      <span className="text-xs text-slate-500">
+                        {p.unit}
+                      </span>
+                    </div>
+
+                    <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-500 ${barColor}`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
 
             {/* FORECAST */}
             <div className="glass-panel p-6 rounded-2xl">
@@ -261,6 +282,11 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
             </div>
+
+            <AdvancedAnalytics
+              location={selectedLocation}
+              persona={selectedPersona}
+            />
 
           </section>
 

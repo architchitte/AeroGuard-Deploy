@@ -101,12 +101,12 @@ class RealtimeAQIService:
             'latitude': 28.61 if 'Delhi' in city_name else 19.07, 
             'longitude': 77.20 if 'Delhi' in city_name else 72.87,
             'pollutants': {
-                'PM2.5': base_aqi * 0.6,
-                'PM10': base_aqi * 0.8,
-                'NO2': random.randint(10, 80),
-                'O3': random.randint(10, 60),
-                'SO2': random.randint(5, 30),
-                'CO': random.uniform(0.5, 2.0),
+                'pm25': round(base_aqi * 0.6, 1),
+                'pm10': round(base_aqi * 0.8, 1),
+                'no2': random.randint(10, 80),
+                'o3': random.randint(10, 60),
+                'so2': random.randint(5, 30),
+                'co': round(random.uniform(0.5, 2.0), 2),
             },
             'url': 'https://aeroguard.demo',
             'last_updated': datetime.now().isoformat(),
@@ -132,13 +132,14 @@ class RealtimeAQIService:
             # Extract pollutant details
             iaqi = data.get('iaqi', {})
             pollutants = {
-                'PM2.5': iaqi.get('pm25', {}).get('v'),
-                'PM10': iaqi.get('pm10', {}).get('v'),
-                'NO2': iaqi.get('no2', {}).get('v'),
-                'O3': iaqi.get('o3', {}).get('v'),
-                'SO2': iaqi.get('so2', {}).get('v'),
-                'CO': iaqi.get('co', {}).get('v'),
+                'pm25': iaqi.get('pm25', {}).get('v'),
+                'pm10': iaqi.get('pm10', {}).get('v'),
+                'no2': iaqi.get('no2', {}).get('v'),
+                'o3': iaqi.get('o3', {}).get('v'),
+                'so2': iaqi.get('so2', {}).get('v'),
+                'co': iaqi.get('co', {}).get('v'),
             }
+
 
             # Extract location and time information
             location = data.get('city', {})
