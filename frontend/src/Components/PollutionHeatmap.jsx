@@ -16,6 +16,8 @@ import {
 
 import LocationSearch from "../components/LocationSelector";
 import { fetchAQI, fetchMapData } from "../api/aqi";
+import { HeatmapLayer } from "react-leaflet-heatmap-layer-v3";
+
 
 /* ================= MAP CONTROLLER ================= */
 
@@ -117,7 +119,7 @@ export default function PollutionHeatmap() {
 
     if (type === "city") {
       setCenter(locCenter);
-      setZoom(12);
+      setZoom(10);
     }
 
     if (type === "region") {
@@ -125,6 +127,12 @@ export default function PollutionHeatmap() {
       setZoom(7);
     }
   };
+
+  const heatmapPoints = stations.map((s) => ({
+    lat: s.lat,
+    lng: s.lon,
+    value: Math.min(s.aqi, 500), // clamp AQI
+  }));
 
   return (
     <div className="relative w-full h-[820px] rounded-3xl overflow-hidden bg-[#020617] border border-white/10">
@@ -194,6 +202,20 @@ export default function PollutionHeatmap() {
             />
           </>
         )}
+
+        {/* HEATMAP LAYER */}
+        {heatmapPoints.length > 0 && (
+            <HeatmapLayer
+              points={heatmapPoints}
+              longitudeExtractor={(p) => p.lng}
+              latitudeExtractor={(p) => p.lat}
+              intensityExtractor={(p) => p.value}
+              radius={45}     // spread of pollution
+              blur={35}       // smoothness
+              max={400}       // AQI scale cap
+            />
+          )}    
+
 
         {/* NATIONWIDE STATIONS */}
         {stations.map((s) => (

@@ -279,3 +279,64 @@ def health_check():
         "service": "Real-time AQI",
         "timestamp": datetime.now().isoformat(),
     }), 200
+
+@bp.route("/nationwide", methods=["GET"])
+def get_nationwide_aqi():
+    """
+    Get nationwide AQI points for heatmap visualization.
+
+    Returns:
+        JSON list of AQI points with lat/lon
+    """
+    try:
+        # Use popular cities as grid anchors
+        aqi_results = aqi_service.get_multiple_cities_aqi(POPULAR_INDIAN_CITIES)
+
+        points = []
+        for city, aqi_data in aqi_results.items():
+            if not aqi_data:
+                continue
+
+            # Ensure lat/lon exist (WAQI provides them)
+            coords = CITY_COORDS.get(city)
+
+            if not coords:
+                continue
+
+            lat, lon = coords
+
+            points.append({
+                "station": city,
+                "lat": lat,
+                "lon": lon,
+                "aqi": aqi_data["aqi"],
+                "category": aqi_service.get_aqi_category(aqi_data["aqi"])
+            })
+
+
+        return jsonify({
+            "status": "success",
+            "count": len(points),
+            "data": points,
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Nationwide AQI fetch failed: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+    
+CITY_COORDS = {
+    "Delhi": (28.6139, 77.2090),
+    "Mumbai": (19.0760, 72.8777),
+    "Kolkata": (22.5726, 88.3639),
+    "Chennai": (13.0827, 80.2707),
+    "Bengaluru": (12.9716, 77.5946),
+    "Hyderabad": (17.3850, 78.4867),
+    "Pune": (18.5204, 73.8567),
+    "Ahmedabad": (23.0225, 72.5714),
+    "Jaipur": (26.9124, 75.7873),
+    "Lucknow": (26.8467, 80.9462),
+}

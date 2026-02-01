@@ -169,6 +169,7 @@ def _register_blueprints(app):
     from app.routes import realtime_aqi as realtime_aqi_routes
     from app.routes import generative_ai as generative_ai_routes
     from app.routes import analytics_route as analytics_bp
+    from app.routes import realtime_aqi as realtime_aqi_routes
 
 
 
