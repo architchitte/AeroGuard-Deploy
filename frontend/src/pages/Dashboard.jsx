@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useEffect} from "react";
 import {
   AreaChart,
   Area,
@@ -52,6 +52,10 @@ export default function Dashboard() {
 
   const { forecast6h, loading: forecastLoading } = useForecast6h(selectedLocation);
 
+
+  useEffect(() => {
+    console.log("6H refreshed", selectedLocation?.name, forecast6h);
+  }, [forecast6h]);
   /* ============================
      1️⃣ SEARCH SCREEN (NO LOCATION SELECTED)
      ============================ */

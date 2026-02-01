@@ -21,7 +21,7 @@ Example with custom config:
 """
 
 import logging
-from flask import Flask
+from flask import Flask, app
 from flask_cors import CORS
 
 from app.config import Config
@@ -168,6 +168,9 @@ def _register_blueprints(app):
     from app.routes import user as user_routes
     from app.routes import realtime_aqi as realtime_aqi_routes
     from app.routes import generative_ai as generative_ai_routes
+    from app.routes import analytics_route as analytics_bp
+
+
 
     blueprints = [
         (health.bp, "Health Check"),
@@ -177,6 +180,7 @@ def _register_blueprints(app):
         (user_routes.bp, "User API"),
         (realtime_aqi_routes.bp, "Real-time AQI"),
         (generative_ai_routes.bp, "Generative AI"),
+        (analytics_bp.bp, "Analytics")
     ]
 
     try:

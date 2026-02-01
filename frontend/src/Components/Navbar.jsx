@@ -13,7 +13,7 @@ export default function Navbar({ variant = "dashboard" }) {
 
     const dashboardNavItems = [
         { path: '#dashboard', icon: '📊', label: 'Dashboard' },
-        { path: '#Analytics', icon: '🗺️', label: 'Analytics' },
+        { path: '#dashboard', icon: '🗺️', label: 'Analytics' },
         { path: '/', icon: '🚀', label: 'Landing' },
     ];
 

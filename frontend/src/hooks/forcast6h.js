@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import api from "../lib/axios";
 
 export const useForecast6h = (location) => {
@@ -6,10 +7,7 @@ export const useForecast6h = (location) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!location?.name) {
-      setForecast6h([]);
-      return;
-    }
+    if (!location?.name) return;
 
     const fetchForecast = async () => {
       setLoading(true);
@@ -18,7 +16,7 @@ export const useForecast6h = (location) => {
           `/api/v1/forecast/${location.name}/6h`
         );
 
-        setForecast6h(res.data?.forecast ?? []);
+        setForecast6h(res.data?.forecast || []);
       } catch (err) {
         console.error("6H Forecast fetch failed", err);
         setForecast6h([]);
@@ -28,7 +26,7 @@ export const useForecast6h = (location) => {
     };
 
     fetchForecast();
-  }, [location?.name]);
+  }, [location?.name]);   // 🔥 ONLY city change
 
   return { forecast6h, loading };
 };

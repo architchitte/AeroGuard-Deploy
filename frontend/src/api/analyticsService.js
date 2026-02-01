@@ -125,20 +125,51 @@ export const analyticsService = {
     },
 
     // Get Feature Importance for a parameter
-    getFeatureImportance: async (parameter = 'PM2.5') => {
-        try {
-            // Mocking for now as backend doesn't have explainability module yet
+    getFeatureImportance: async (city, aqi = 120, dominant = "pm25") => {
+        const isMetro = ["delhi", "mumbai", "kolkata", "chennai", "bengaluru"]
+            .includes(city.toLowerCase());
+
+        if (aqi > 200) {
             return [
-                { feature: "Prev AQI (t-1)", score: 0.88 },
-                { feature: "PM10 Lag", score: 0.72 },
-                { feature: "Wind Dir", score: 0.55 },
-                { feature: "Rel Humidity", score: 0.42 },
-                { feature: "Time of Day", score: 0.35 },
+            { feature: "Traffic Emissions", score: 0.9 },
+            { feature: "PM2.5 Accumulation", score: 0.85 },
+            { feature: "Low Wind Dispersion", score: 0.6 },
+            { feature: "Temperature Inversion", score: 0.45 },
             ];
-        } catch (error) {
-            return [];
         }
-    },
+
+        if (aqi > 100) {
+            if (dominant === "pm10") {
+            return [
+                { feature: "PM10 Dust", score: 0.75 },
+                { feature: "Construction Activity", score: 0.6 },
+                { feature: "Vehicular Load", score: 0.55 },
+            ];
+            }
+
+            if (dominant === "no2") {
+            return [
+                { feature: "Vehicular Emissions", score: 0.7 },
+                { feature: "Traffic Congestion", score: 0.6 },
+                { feature: "Urban Density", score: 0.45 },
+            ];
+            }
+
+            return [
+            { feature: "PM2.5 Background Load", score: 0.65 },
+            { feature: isMetro ? "Urban Emissions" : "Regional Transport", score: 0.5 },
+            { feature: "Weather Stability", score: 0.4 },
+            ];
+        }
+
+        return [
+            { feature: "Natural Ventilation", score: 0.6 },
+            { feature: "Green Cover", score: 0.5 },
+            { feature: "Low Traffic Load", score: 0.35 },
+        ];
+        },
+
+
 
     // 4. Get AI-Powered Briefing
     getAIBriefing: async (city = 'Mumbai', persona = 'general_public') => {

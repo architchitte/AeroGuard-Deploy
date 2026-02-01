@@ -4,9 +4,6 @@ import {
   Area,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -14,10 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import {
-  BrainCircuit,
   TrendingUp,
-  AlertTriangle,
-  Activity,
   Database,
   CheckCircle,
   Clock,
@@ -26,71 +20,96 @@ import {
 } from "lucide-react";
 
 import { analyticsService } from "../api/analyticsService";
-import AeroIntelligenceBriefing from "./AeroIntelligenceBriefing";
-
-/* ================= CONSTANTS ================= */
-
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const TIME_SLOTS = ["Morning", "Afternoon", "Evening", "Night"];
-const HEATMAP_COLORS = [
-  "bg-teal-500/20",
-  "bg-yellow-500/20",
-  "bg-orange-500/40",
-  "bg-red-500/60",
-];
 
 /* ================= COMPONENT ================= */
 
 export default function AdvancedAnalytics({ location, persona }) {
   const cityName = location?.name || "Mumbai";
-
-  /* -------- UI State -------- */
   const [timeRange, setTimeRange] = useState(14);
-  const [forecastHorizon, setForecastHorizon] = useState(6);
+  const [historyData, setHistoryData] = useState([]);
+
+  const [currentAqi, setCurrentAqi] = useState(null);
   const [selectedPollutant, setSelectedPollutant] = useState("pm25");
 
-  /* -------- System State -------- */
+  const [featureImportance, setFeatureImportance] = useState([]);
   const [backendStatus, setBackendStatus] = useState("checking");
 
-  /* -------- Data State -------- */
-  const [historyData, setHistoryData] = useState([]);
-  const [metrics, setMetrics] = useState({
-    sarima: {},
-    xgboost: {},
-    hybrid: {},
-  });
-  const [featureImportance, setFeatureImportance] = useState([]);
-  const [pollutantComposition, setPollutantComposition] = useState([]);
-  const [heatmapData, setHeatmapData] = useState([]);
-  const [currentAqi, setCurrentAqi] = useState(null);
 
-  /* ================= INIT ================= */
+  const getDominantPollutant = (latest) => {
+      if (!latest) return "pm25";
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const health = await analyticsService.checkHealth();
-        setBackendStatus(health?.status === "healthy" ? "online" : "offline");
+      const pollutants = {
+        pm25: latest.pm25,
+        pm10: latest.pm10,
+        no2: latest.no2,
+        o3: latest.o3,
+      };
 
-        const features = await analyticsService.getFeatureImportance();
-        setFeatureImportance(features || []);
-
-        const composition =
-          await analyticsService.getPollutantComposition(cityName);
-        setPollutantComposition(composition || []);
-
-        const heatmap =
-          await analyticsService.getTemporalHeatmap(cityName);
-        setHeatmapData(heatmap || []);
-
-      } catch (err) {
-        console.warn("Analytics init failed", err);
-        setBackendStatus("offline");
-      }
+      return Object.entries(pollutants)
+        .sort((a, b) => b[1] - a[1])[0][0];
     };
 
-    init();
-  }, [cityName]);
+  /* ================= INIT ================= */
+  useEffect(() => {
+      const fetchHistory = async () => {
+        const data = await analyticsService.getHistoricalAnalysis(
+          timeRange,
+          cityName
+        );
+
+        setHistoryData(data || []);
+
+        if (data?.length) {
+          const latest = data[data.length - 1];
+
+          setCurrentAqi(latest.aqi);
+
+          const dominant = Object.entries({
+            pm25: latest.pm25,
+            pm10: latest.pm10,
+            no2: latest.no2,
+            o3: latest.o3,
+          }).sort((a, b) => b[1] - a[1])[0][0];
+
+          setSelectedPollutant(dominant);
+        }
+      };
+
+      fetchHistory();
+    }, [cityName, timeRange]);
+
+
+  useEffect(() => {
+      if (!currentAqi || !selectedPollutant) return;
+
+      const fetchXAI = async () => {
+        try {
+          const health = await analyticsService.checkHealth();
+          setBackendStatus(
+            health?.status === "healthy" ? "online" : "offline"
+          );
+
+          const xai = await analyticsService.getFeatureImportance(
+            cityName,
+            currentAqi,
+            selectedPollutant
+          );
+
+          setFeatureImportance(xai);
+        } catch (err) {
+          console.warn("XAI fetch failed", err);
+          setBackendStatus("offline");
+        }
+      };
+
+      fetchXAI();
+    }, [cityName, currentAqi, selectedPollutant]); 
+
+    console.log("XAI refresh", {
+      cityName,
+      currentAqi,
+      selectedPollutant
+    });
 
   /* ================= HISTORY ================= */
 
@@ -101,33 +120,10 @@ export default function AdvancedAnalytics({ location, persona }) {
         cityName
       );
       setHistoryData(data || []);
-
-      if (data?.length) {
-        setCurrentAqi(data[data.length - 1]?.aqi ?? null);
-      }
     };
 
     fetchHistory();
   }, [timeRange, cityName]);
-
-  /* ================= METRICS ================= */
-
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      if (historyData.length >= 20) {
-        const data = await analyticsService.runModelComparison(
-          historyData,
-          forecastHorizon
-        );
-        setMetrics(data || {});
-      } else {
-        const data = await analyticsService.getModelMetrics(forecastHorizon);
-        setMetrics(data || {});
-      }
-    };
-
-    fetchMetrics();
-  }, [historyData, forecastHorizon]);
 
   /* ================= RENDER ================= */
 
@@ -147,12 +143,6 @@ export default function AdvancedAnalytics({ location, persona }) {
           </span>
         )}
       </div>
-
-      {/* ---------- AI BRIEFING ---------- */}
-      <AeroIntelligenceBriefing
-        city={cityName}
-        persona={persona || "general"}
-      />
 
       {/* ---------- HISTORICAL TREND ---------- */}
       <div className="glass-panel p-6 rounded-3xl border border-white/10">
@@ -192,7 +182,7 @@ export default function AdvancedAnalytics({ location, persona }) {
         </div>
       </div>
 
-      {/* ---------- FEATURE IMPORTANCE ---------- */}
+      {/* ---------- FEATURE IMPORTANCE (XAI) ---------- */}
       <div className="glass-panel p-6 rounded-3xl border border-white/10">
         <h3 className="text-md font-bold text-white mb-4">
           Explainable AI (XAI)
@@ -209,37 +199,13 @@ export default function AdvancedAnalytics({ location, persona }) {
                 fontSize={10}
               />
               <Tooltip />
-              <Bar dataKey="score" fill="#ec4899" radius={[0, 4, 4, 0]} />
+              <Bar
+                dataKey="score"
+                fill="#ec4899"
+                radius={[0, 4, 4, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* ---------- HEATMAP ---------- */}
-      <div className="glass-panel p-6 rounded-3xl border border-white/10">
-        <h3 className="text-sm font-bold text-white mb-3">
-          Temporal Pollution Density
-        </h3>
-
-        <div className="grid grid-cols-[auto_repeat(4,1fr)] gap-1">
-          <div />
-          {TIME_SLOTS.map((t) => (
-            <div key={t} className="text-xs text-center text-slate-400">
-              {t}
-            </div>
-          ))}
-
-          {DAYS.map((day, d) => (
-            <React.Fragment key={day}>
-              <div className="text-xs text-slate-400">{day}</div>
-              {heatmapData?.[d]?.map((v, i) => (
-                <div
-                  key={i}
-                  className={`h-6 rounded ${HEATMAP_COLORS[v]}`}
-                />
-              ))}
-            </React.Fragment>
-          ))}
         </div>
       </div>
 
