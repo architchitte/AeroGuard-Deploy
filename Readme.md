@@ -124,21 +124,24 @@ Backend responses may return pollutants in **multiple formats**:
   "PM10": 120
 }
 
-value: typeof val === "object" ? val.value : val
+---
 
-⚙️ Environment Variables
+## ⚙️ Environment Variables
 
-Backend (.env)
+###Backend (`.env`)
+```env
 
 REALTIME_AQI_API_KEY=your_waqi_api_key_here
 REALTIME_AQI_BASE_URL=https://api.waqi.info
 
-Frontend (.env)
+###Frontend (`.env`)
+```env
 
 VITE_API_BASE_URL=http://localhost:5000
 
+---
 
-**How to Run the Project**
+## How to Run the Project
 
 1️⃣ Clone the Repository
 
