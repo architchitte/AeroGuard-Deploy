@@ -123,32 +123,33 @@ Backend responses may return pollutants in **multiple formats**:
   "PM2.5": 78,
   "PM10": 120
 }
-
+```
 ---
 
 ## ⚙️ Environment Variables
 
-###Backend (`.env`)
+### Backend (`.env`)
 ```env
 
 REALTIME_AQI_API_KEY=your_waqi_api_key_here
-REALTIME_AQI_BASE_URL=https://api.waqi.info
+REALTIME_AQI_BASE_URL=https://api.waqi.info 
+```
 
-###Frontend (`.env`)
+### Frontend (`.env`)
 ```env
 
 VITE_API_BASE_URL=http://localhost:5000
-
+```
 ---
 
 ## How to Run the Project
 
-1️⃣ Clone the Repository
+### 1️⃣ Clone the Repository
 
 git clone https://github.com/your-username/aeroguard.git
 cd aeroguard
 
-2️⃣ Backend Setup
+### 2️⃣ Backend Setup
 
 cd backend
 python -m venv venv
@@ -161,7 +162,7 @@ Backend will run on:
 
 http://localhost:5000
 
-3️⃣ Frontend Setup
+### 3️⃣ Frontend Setup
 
 cd frontend
 npm install
