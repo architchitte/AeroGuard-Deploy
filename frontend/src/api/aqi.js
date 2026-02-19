@@ -1,10 +1,13 @@
-
-import React from "react";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const fetchAQI = async (lat, lon) => {
   const res = await fetch(
-    `http://localhost:5000/api/v1/realtime-aqi/coordinates?latitude=${lat}&longitude=${lon}`
+    `${API_BASE_URL}/api/v1/realtime-aqi/coordinates?latitude=${lat}&longitude=${lon}`
   );
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  }
 
   const json = await res.json();
 
@@ -12,15 +15,16 @@ const fetchAQI = async (lat, lon) => {
     throw new Error(json.message || "Failed to fetch AQI");
   }
 
-  return json.data; // ← this contains AQI
+  return json.data;
 };
+
 const fetchMapData = async () => {
   const res = await fetch(
-    "http://localhost:5000/api/v1/realtime-aqi/popular-cities"
+    `${API_BASE_URL}/api/v1/realtime-aqi/popular-cities`
   );
 
   if (!res.ok) {
-    throw new Error("Failed to fetch nationwide AQI");
+    throw new Error(`Failed to fetch nationwide AQI: ${res.status}`);
   }
 
   const json = await res.json();
@@ -38,6 +42,5 @@ const fetchMapData = async () => {
       aqi: v.aqi,
     }));
 };
-
 
 export { fetchAQI, fetchMapData };

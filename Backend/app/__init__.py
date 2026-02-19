@@ -111,17 +111,26 @@ def _setup_cors(app):
     Configure CORS (Cross-Origin Resource Sharing).
 
     Allows:
-    - All origins (configurable via CORS_ORIGINS setting)
+    - Specified origins only (from CORS_ORIGINS config)
     - Common methods (GET, POST, PUT, DELETE, OPTIONS)
-    - Common headers (Content-Type, Authorization, etc.)
+    - Common headers (Content-Type, Authorization)
     - Credentials (cookies, authorization headers)
 
     Args:
         app (Flask): Flask application instance
     """
     try:
-        CORS(app, resources={r"/*": {"origins": app.config.get("CORS_ORIGINS", "*")}})
-        logger.info("✓ CORS initialized")
+        cors_config = {
+            "origins": app.config.get("CORS_ORIGINS", "*"),
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["X-Request-ID", "X-Response-Time"],
+            "supports_credentials": True,
+            "max_age": 3600
+        }
+        
+        CORS(app, resources={r"/*": cors_config})
+        logger.info(f"✓ CORS initialized with origins: {cors_config['origins']}")
     except Exception as e:
         logger.error(f"✗ CORS initialization failed: {e}")
         raise
@@ -169,7 +178,8 @@ def _register_blueprints(app):
     from app.routes import realtime_aqi as realtime_aqi_routes
     from app.routes import generative_ai as generative_ai_routes
     from app.routes import analytics_route as analytics_bp
-    from app.routes import realtime_aqi as realtime_aqi_routes
+    from app.routes import historical_analysis as historical_analysis_routes
+    from app.routes import health_risk as health_risk_routes
 
 
 
@@ -181,7 +191,9 @@ def _register_blueprints(app):
         (user_routes.bp, "User API"),
         (realtime_aqi_routes.bp, "Real-time AQI"),
         (generative_ai_routes.bp, "Generative AI"),
-        (analytics_bp.bp, "Analytics")
+        (analytics_bp.bp, "Analytics"),
+        (historical_analysis_routes.bp, "Historical Analysis"),
+        (health_risk_routes.bp, "Health Risk Assessment")
     ]
 
     try:
@@ -215,19 +227,35 @@ def _register_hooks(app):
         """Log incoming request details and generate request ID."""
         g.start_time = time.time()
         g.request_id = str(uuid.uuid4())
-        logger.debug(f"→ {request.method:6} {request.path} [ID: {g.request_id}]")
+        
+        # Sanitize query params for logging (remove sensitive data)
+        safe_args = {k: v for k, v in request.args.items() 
+                     if k.lower() not in ['password', 'token', 'api_key', 'secret', 'key']}
+        
+        logger.debug(f"→ {request.method:6} {request.path} [ID: {g.request_id}] params={safe_args}")
 
     @app.after_request
     def after_request(response):
-        """Log response details and add headers."""
+        """Log response details and add security headers."""
         # Calculate response time
         duration = time.time() - getattr(g, "start_time", 0)
 
         # Add response headers
         response.headers["X-Request-ID"] = getattr(g, "request_id", str(uuid.uuid4()))
         response.headers["X-Response-Time"] = f"{duration:.6f}"
-        response.headers["X-Powered-By"] = "AeroGuard/1.0"
-        response.headers["Server"] = "AeroGuard/1.0"
+        
+        # Security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
+        # HSTS in production
+        if app.config.get("ENV") == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        
+        # Remove server identification
+        response.headers.pop("Server", None)
 
         logger.debug(f"← {response.status_code:3} {request.path} ({duration:.3f}s)")
         return response

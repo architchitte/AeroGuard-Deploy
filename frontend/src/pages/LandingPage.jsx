@@ -26,10 +26,10 @@ export default function LandingPage() {
           <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-emerald-500/10 blur-[140px] animate-pulse" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-cyan-500/10 blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40vw] h-[40vw] rounded-full bg-blue-500/5 blur-[100px]" />
-          
+
           {/* Grid Pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_at_center,black,transparent_85%)]" />
-          
+
           {/* Floating Particles */}
           {[...Array(20)].map((_, i) => (
             <motion.div
@@ -106,10 +106,10 @@ export default function LandingPage() {
             >
               {/* Animated Background */}
               <span className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
+
               {/* Shine Effect */}
               <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              
+
               <span className="relative z-10">View Detailed Insights</span>
               <ArrowRight className="w-5 h-5 text-emerald-400 relative z-10 group-hover:translate-x-2 transition-transform duration-300" />
             </motion.button>
@@ -123,21 +123,21 @@ export default function LandingPage() {
             className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16 max-w-5xl mx-auto"
           >
             {[
-              { 
-                icon: Clock, 
-                label: "Real-time Forecasting", 
+              {
+                icon: Clock,
+                label: "Real-time Forecasting",
                 desc: "Live sensor data integration with predictive analytics",
                 color: "emerald"
               },
-              { 
-                icon: Shield, 
-                label: "Persona Protection", 
+              {
+                icon: Shield,
+                label: "Persona Protection",
                 desc: "Customized health advice for every individual profile",
                 color: "cyan"
               },
-              { 
-                icon: MapPin, 
-                label: "Hyper-Local Maps", 
+              {
+                icon: MapPin,
+                label: "Hyper-Local Maps",
                 desc: "Spatial pollution tracking at street-level granularity",
                 color: "blue"
               },
@@ -152,12 +152,12 @@ export default function LandingPage() {
               >
                 {/* Glow Effect on Hover */}
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
-                
+
                 {/* Icon Container */}
                 <div className="relative p-4 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/10 border border-emerald-500/30 group-hover:scale-110 transition-transform duration-300">
                   <item.icon className="w-8 h-8 text-emerald-400" />
                 </div>
-                
+
                 {/* Content */}
                 <div className="text-center space-y-2 relative z-10">
                   <h3 className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">
@@ -227,7 +227,7 @@ export default function LandingPage() {
             <div className="absolute inset-4">
               <PollutionHeatmap />
             </div>
-            
+
             {/* Live Data Badge - Now properly positioned inside border */}
             <div className="absolute top-6 right-6 px-4 py-2 rounded-full bg-slate-900/90 backdrop-blur-xl border border-emerald-500/30 z-50">
               <div className="flex items-center gap-2">
@@ -240,8 +240,8 @@ export default function LandingPage() {
           {/* Feature Pills */}
           <div className="flex flex-wrap gap-3 mt-8 justify-center">
             {["Predictive AI", "Real-time Updates", "30km Coverage", "Street-Level Detail"].map((feature, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-400 hover:bg-white/10 hover:text-emerald-400 hover:border-emerald-500/30 transition-all duration-300 cursor-pointer"
               >
                 {feature}
@@ -273,7 +273,7 @@ export default function LandingPage() {
       </footer>
 
       {/* Animation Styles */}
-      <style jsx>{`
+      <style>{`
         @keyframes gradient-x {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }

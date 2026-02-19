@@ -4,8 +4,10 @@ Model Management Routes
 Endpoints for model training, saving, and loading.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 import numpy as np
+import re
+from pathlib import Path
 from app.models.forecast_model import ForecastModel
 from app.utils.validators import InputValidator
 from app.utils.error_handlers import ValidationError, ModelLoadError
@@ -96,34 +98,55 @@ def train_model():
 @bp.route("/save", methods=["POST"])
 def save_model():
     """
-    Save trained model to disk.
+    Save trained model to disk (secure version with path validation).
 
     Request JSON:
         {
-            "model_path": "string (path to save)"
+            "model_name": "string (filename only, e.g., 'my_model.pkl')"
         }
 
     Returns:
         JSON with save status
     """
+    from flask import current_app
+    from pathlib import Path
+    
     try:
         data = request.get_json()
 
-        if not data or "model_path" not in data:
-            raise ValidationError("model_path is required")
+        if not data or "model_name" not in data:
+            raise ValidationError("model_name is required")
 
-        model_path = InputValidator.sanitize_string(data["model_path"])
+        # Validate model name (filename only, no paths)
+        model_name = InputValidator.sanitize_string(data["model_name"], max_length=100)
+        
+        # Only allow alphanumeric, underscore, hyphen, and .pkl extension
+        if not re.match(r'^[a-zA-Z0-9_-]+\.pkl$', model_name):
+            raise ValidationError("Invalid model filename. Use format: name.pkl")
+        
+        # Get safe model directory from config
+        model_dir = Path(current_app.config.get('MODEL_DIR', 'app/models/saved'))
+        model_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Construct safe path
+        model_path = model_dir / model_name
+        
+        # Prevent path traversal - ensure resolved path is within model_dir
+        if not str(model_path.resolve()).startswith(str(model_dir.resolve())):
+            raise ValidationError("Invalid model path")
+        
         model = _get_model()
 
         if not model.is_trained:
             raise ValidationError("Model must be trained before saving")
 
-        model.save(model_path)
+        model.save(str(model_path))
 
         return jsonify(
             {
                 "status": "success",
-                "message": f"Model saved to {model_path}",
+                "message": f"Model saved successfully",
+                "model_name": model_name
             }
         ), 200
 
@@ -140,31 +163,50 @@ def save_model():
 @bp.route("/load", methods=["POST"])
 def load_model():
     """
-    Load model from disk.
+    Load model from disk (secure version with path validation).
 
     Request JSON:
         {
-            "model_path": "string (path to load from)"
+            "model_name": "string (filename only)"
         }
 
     Returns:
         JSON with load status
     """
+    from flask import current_app
+    from pathlib import Path
+    
     try:
         data = request.get_json()
 
-        if not data or "model_path" not in data:
-            raise ValidationError("model_path is required")
+        if not data or "model_name" not in data:
+            raise ValidationError("model_name is required")
 
-        model_path = InputValidator.sanitize_string(data["model_path"])
+        # Validate model name
+        model_name = InputValidator.sanitize_string(data["model_name"], max_length=100)
+        
+        if not re.match(r'^[a-zA-Z0-9_-]+\.pkl$', model_name):
+            raise ValidationError("Invalid model filename")
+        
+        # Get safe model directory
+        model_dir = Path(current_app.config.get('MODEL_DIR', 'app/models/saved'))
+        model_path = model_dir / model_name
+        
+        # Prevent path traversal
+        if not str(model_path.resolve()).startswith(str(model_dir.resolve())):
+            raise ValidationError("Invalid model path")
+        
+        if not model_path.exists():
+            raise FileNotFoundError(f"Model '{model_name}' not found")
+        
         model = _get_model()
-
-        model.load(model_path)
+        model.load(str(model_path))
 
         return jsonify(
             {
                 "status": "success",
-                "message": f"Model loaded from {model_path}",
+                "message": f"Model loaded successfully",
+                "model_name": model_name,
                 "model_type": model.model_type,
             }
         ), 200

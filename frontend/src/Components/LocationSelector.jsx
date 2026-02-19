@@ -15,22 +15,19 @@ export default function LocationSearch({ onSelect }) {
       return;
     }
 
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
     setLoading(true);
     try {
       const res = await fetch(
-          `https://nominatim.openstreetmap.org/search` +
-          `?q=${encodeURIComponent(text)}` +
-          `&format=json` +
-          `&limit=5` +
-          `&countrycodes=in` +        // 🔒 India only
-          `&bounded=1` +              // 🔒 hard boundary
-          `&viewbox=68.7,37.1,97.25,6.5` // 🔒 India bounding box
-        );
+        `${API_BASE_URL}/api/v1/realtime-aqi/search?q=${encodeURIComponent(text)}`
+      );
       const data = await res.json();
 
       setResults(
         data.map((item) => ({
-          name: item.display_name,
+          displayName: item.display_name,
+          name: item.display_name.split(',')[0], // Extract city name
           lat: parseFloat(item.lat),
           lon: parseFloat(item.lon),
         }))
@@ -79,7 +76,7 @@ export default function LocationSearch({ onSelect }) {
               }}
               className="w-full text-left px-3 py-2 rounded-lg bg-black/30 hover:bg-white/5 text-slate-300 text-xs transition"
             >
-              {loc.name}
+              {loc.displayName}
             </button>
           ))}
         </div>

@@ -36,96 +36,90 @@ export default function AdvancedAnalytics({ location, persona }) {
 
 
   const getDominantPollutant = (latest) => {
-      if (!latest) return "pm25";
+    if (!latest) return "pm25";
 
-      const pollutants = {
-        pm25: latest.pm25,
-        pm10: latest.pm10,
-        no2: latest.no2,
-        o3: latest.o3,
-      };
-
-      return Object.entries(pollutants)
-        .sort((a, b) => b[1] - a[1])[0][0];
+    const pollutants = {
+      pm25: latest.pm25,
+      pm10: latest.pm10,
+      no2: latest.no2,
+      o3: latest.o3,
     };
 
-  const DarkTooltip = ({ active, payload }) => {
-      if (active && payload && payload.length) {
-        const { feature, score } = payload[0].payload;
+    return Object.entries(pollutants)
+      .sort((a, b) => b[1] - a[1])[0][0];
+  };
 
-        return (
-          <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 shadow-xl">
-            <p className="font-semibold">{feature}</p>
-            <p className="text-pink-400 mt-1">
-              Impact Score: {(score * 10).toFixed(1)} / 10
-            </p>
-          </div>
-        );
-      }
-      return null;
-    };  
+  const DarkTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const { feature, score } = payload[0].payload;
+
+      return (
+        <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 shadow-xl">
+          <p className="font-semibold">{feature}</p>
+          <p className="text-pink-400 mt-1">
+            Impact Score: {(score * 10).toFixed(1)} / 10
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   /* ================= INIT ================= */
   useEffect(() => {
-      const fetchHistory = async () => {
-        const data = await analyticsService.getHistoricalAnalysis(
-          timeRange,
-          cityName
-        );
+    const fetchHistory = async () => {
+      const data = await analyticsService.getHistoricalAnalysis(
+        timeRange,
+        cityName
+      );
 
-        setHistoryData(data || []);
+      setHistoryData(data || []);
 
-        if (data?.length) {
-          const latest = data[data.length - 1];
+      if (data?.length) {
+        const latest = data[data.length - 1];
 
-          setCurrentAqi(latest.aqi);
+        setCurrentAqi(latest.aqi);
 
-          const dominant = Object.entries({
-            pm25: latest.pm25,
-            pm10: latest.pm10,
-            no2: latest.no2,
-            o3: latest.o3,
-          }).sort((a, b) => b[1] - a[1])[0][0];
+        const dominant = Object.entries({
+          pm25: latest.pm25,
+          pm10: latest.pm10,
+          no2: latest.no2,
+          o3: latest.o3,
+        }).sort((a, b) => b[1] - a[1])[0][0];
 
-          setSelectedPollutant(dominant);
-        }
-      };
+        setSelectedPollutant(dominant);
+      }
+    };
 
-      fetchHistory();
-    }, [cityName, timeRange]);
+    fetchHistory();
+  }, [cityName, timeRange]);
 
 
   useEffect(() => {
-      if (!currentAqi || !selectedPollutant) return;
+    if (!currentAqi || !selectedPollutant) return;
 
-      const fetchXAI = async () => {
-        try {
-          const health = await analyticsService.checkHealth();
-          setBackendStatus(
-            health?.status === "healthy" ? "online" : "offline"
-          );
+    const fetchXAI = async () => {
+      try {
+        const health = await analyticsService.checkHealth();
+        setBackendStatus(
+          health?.status === "healthy" ? "online" : "offline"
+        );
 
-          const xai = await analyticsService.getFeatureImportance(
-            cityName,
-            currentAqi,
-            selectedPollutant
-          );
+        const xai = await analyticsService.getFeatureImportance(
+          cityName,
+          currentAqi,
+          selectedPollutant
+        );
 
-          setFeatureImportance(xai);
-        } catch (err) {
-          console.warn("XAI fetch failed", err);
-          setBackendStatus("offline");
-        }
-      };
+        setFeatureImportance(xai);
+      } catch (err) {
+        console.warn("XAI fetch failed", err);
+        setBackendStatus("offline");
+      }
+    };
 
-      fetchXAI();
-    }, [cityName, currentAqi, selectedPollutant]); 
-
-    console.log("XAI refresh", {
-      cityName,
-      currentAqi,
-      selectedPollutant
-    });
+    fetchXAI();
+  }, [cityName, currentAqi, selectedPollutant]);
 
   /* ================= HISTORY ================= */
 
@@ -180,7 +174,7 @@ export default function AdvancedAnalytics({ location, persona }) {
         </div>
 
         <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <AreaChart data={historyData}>
               <CartesianGrid stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="date" fontSize={10} />
@@ -205,7 +199,7 @@ export default function AdvancedAnalytics({ location, persona }) {
         </h3>
 
         <div className="h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart
               layout="vertical"
               data={featureImportance.map(f => ({

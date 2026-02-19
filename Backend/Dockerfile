@@ -26,9 +26,9 @@ COPY . .
 # Set environment path
 ENV PATH=/root/.local/bin:$PATH
 
-# Health check
+# Health check - use correct port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/api/v1/health')"
+    CMD python -c "import requests; requests.get('http://localhost:8000/health', timeout=5)"
 
 # Run with Gunicorn
 CMD ["gunicorn", \

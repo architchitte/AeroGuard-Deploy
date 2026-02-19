@@ -21,9 +21,9 @@ import {
 
 import { useAQIData } from "../hooks/useAQIData";
 import CityHeatmap from "../Components/CityHeatmap";
-import LocationSearch from "../components/LocationSelector";
+import LocationSearch from "../Components/LocationSelector";
 import AeroIntelligenceBriefing from "../Components/AeroIntelligenceBriefing";
-import PersonalizedHealthAdvice from "../components/PersonalizedHealthAdvice";
+import PersonalizedHealthAdvice from "../Components/PersonalizedHealthAdvice";
 import AdvancedAnalytics from "../Components/AdvancedAnalytics";
 import PollutantDetails from "../Components/PollutantDetails";
 import { useForecast6h } from "../hooks/forcast6h.js";
@@ -54,10 +54,10 @@ export default function Dashboard() {
     selectedPersona
   );
 
-  const { forecast6h, loading: forecastLoading } = useForecast6h(selectedLocation);
+  const { forecast6h, summary, loading: forecastLoading } = useForecast6h(selectedLocation);
 
   useEffect(() => {
-    console.log("6H refreshed", selectedLocation?.name, forecast6h);
+    // Forecast data updated
   }, [forecast6h]);
 
   /* ============================
@@ -69,7 +69,7 @@ export default function Dashboard() {
         {/* Animated Background */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.15),_transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(34,211,238,0.12),_transparent_50%)]" />
-        
+
         {/* Floating Particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(15)].map((_, i) => (
@@ -102,7 +102,7 @@ export default function Dashboard() {
               </span>
             </h1>
             <p className="text-lg md:text-xl text-slate-400 leading-relaxed max-w-lg mx-auto">
-              Real-time air quality monitoring powered by next-generation predictive AI. 
+              Real-time air quality monitoring powered by next-generation predictive AI.
               Know what you breathe, wherever you are.
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <style jsx>{`
+        <style>{`
           @keyframes float {
             0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
             50% { transform: translateY(-20px) translateX(10px); opacity: 0.6; }
@@ -176,29 +176,29 @@ export default function Dashboard() {
 
   /* ---------------- THEME BASED ON AQI ---------------- */
   const getTheme = (aqi) => {
-    if (aqi <= 50) return { 
-      color: "text-emerald-400", 
+    if (aqi <= 50) return {
+      color: "text-emerald-400",
       stroke: "#10b981",
       glow: "bg-emerald-500",
       border: "border-emerald-500/30",
       gradient: "from-emerald-500/20 to-cyan-500/20"
     };
-    if (aqi <= 100) return { 
-      color: "text-yellow-400", 
+    if (aqi <= 100) return {
+      color: "text-yellow-400",
       stroke: "#facc15",
       glow: "bg-yellow-500",
       border: "border-yellow-500/30",
       gradient: "from-yellow-500/20 to-orange-500/20"
     };
-    if (aqi <= 200) return { 
-      color: "text-orange-500", 
+    if (aqi <= 200) return {
+      color: "text-orange-500",
       stroke: "#f97316",
       glow: "bg-orange-500",
       border: "border-orange-500/30",
       gradient: "from-orange-500/20 to-red-500/20"
     };
-    return { 
-      color: "text-red-500", 
+    return {
+      color: "text-red-500",
       stroke: "#ef4444",
       glow: "bg-red-500",
       border: "border-red-500/30",
@@ -211,12 +211,12 @@ export default function Dashboard() {
   /* ---------------- POLLUTANTS PROCESSING ---------------- */
   const pollutants = data?.pollutants
     ? Object.entries(data.pollutants).map(([key, val]) => ({
-        id: key,
-        name: POLLUTANT_CONFIG[key]?.name || key.toUpperCase(),
-        value: typeof val === "object" ? val.value : val,
-        unit: POLLUTANT_CONFIG[key]?.unit || "",
-        icon: POLLUTANT_CONFIG[key]?.icon || Wind,
-      }))
+      id: key,
+      name: POLLUTANT_CONFIG[key]?.name || key.toUpperCase(),
+      value: typeof val === "object" ? val.value : val,
+      unit: POLLUTANT_CONFIG[key]?.unit || "",
+      icon: POLLUTANT_CONFIG[key]?.icon || Wind,
+    }))
     : [];
 
   /* ============================
@@ -231,7 +231,7 @@ export default function Dashboard() {
       {/* ================= MAIN CONTENT ================= */}
       <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6">
-          
+
           {/* ================= LEFT SIDEBAR ================= */}
           <aside className="lg:col-span-3 space-y-5">
             {/* LOCATION SEARCH */}
@@ -259,7 +259,7 @@ export default function Dashboard() {
             <div className="relative glass-panel p-8 lg:p-10 rounded-3xl border border-white/10 overflow-hidden group hover:border-white/20 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10">
               {/* Animated Glow */}
               <div className={`absolute -top-24 -right-24 w-72 h-72 ${theme.glow} blur-[140px] opacity-20 group-hover:opacity-30 transition-opacity duration-700`} />
-              
+
               {/* Gradient Overlay */}
               <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
@@ -302,6 +302,101 @@ export default function Dashboard() {
               />
             </div>
 
+            {/* FORECAST CHART - MOVED UP */}
+            <div className="glass-panel p-6 lg:p-7 rounded-2xl border border-white/10 hover:border-emerald-500/30 transition-all duration-300">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 pb-4 border-b border-white/10">
+                <h3 className="text-base font-black text-white flex items-center gap-2.5">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30">
+                    <Activity size={16} className="text-emerald-400" />
+                  </div>
+                  <span>6-Hour AQI Forecast</span>
+                </h3>
+                <div className="flex items-center gap-2">
+                  {forecast6h.length > 0 && !forecastLoading && (
+                    <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${forecast6h[forecast6h.length - 1].aqi > forecast6h[0].aqi ? 'text-red-400 bg-red-400/10' : 'text-emerald-400 bg-emerald-400/10'
+                      }`}>
+                      {forecast6h[forecast6h.length - 1].aqi > forecast6h[0].aqi ? 'Rising' : 'Improving'}
+                    </div>
+                  )}
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                    Predictive Hybrid AI
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-72">
+                {forecastLoading ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-3">
+                    <Activity className="w-8 h-8 text-emerald-400 animate-spin" />
+                    <p className="text-sm text-slate-400 font-medium">Generating predictive models…</p>
+                  </div>
+                ) : forecast6h.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                      <AreaChart
+                        data={forecast6h.map(item => ({
+                          time: item.hour,
+                          aqi: item.aqi
+                        }))}
+                      >
+                        <defs>
+                          <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={theme.stroke} stopOpacity={0.4} />
+                            <stop offset="95%" stopColor={theme.stroke} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+
+                        <XAxis
+                          dataKey="time"
+                          tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
+                          stroke="#334155"
+                          strokeWidth={1}
+                        />
+                        <YAxis
+                          tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
+                          stroke="#334155"
+                          strokeWidth={1}
+                          domain={[0, 'auto']}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                          }}
+                          labelStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '12px' }}
+                          itemStyle={{ color: theme.stroke, fontWeight: 'bold' }}
+                        />
+
+                        <Area
+                          type="monotone"
+                          dataKey="aqi"
+                          stroke={theme.stroke}
+                          strokeWidth={3}
+                          fill="url(#forecastGradient)"
+                          animationDuration={1000}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                    {summary?.explanation && (
+                      <div className="mt-4 p-3 rounded-lg bg-white/5 border border-white/10">
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          <span className="text-emerald-400 font-bold mr-2">AI Analysis:</span>
+                          {summary.explanation}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-sm text-slate-400">Atmospheric forecast unavailable</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* POLLUTANTS GRID */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {pollutants.map((p, index) => {
@@ -321,14 +416,14 @@ export default function Dashboard() {
                   percent > 75
                     ? "bg-gradient-to-r from-red-500 to-pink-500"
                     : percent > 50
-                    ? "bg-gradient-to-r from-orange-500 to-yellow-500"
-                    : "bg-gradient-to-r from-emerald-500 to-cyan-500";
+                      ? "bg-gradient-to-r from-orange-500 to-yellow-500"
+                      : "bg-gradient-to-r from-emerald-500 to-cyan-500";
 
                 const IconComponent = p.icon;
 
                 return (
-                  <div 
-                    key={p.id} 
+                  <div
+                    key={p.id}
                     className="glass-panel p-5 rounded-xl space-y-3 border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 hover:shadow-xl group"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
@@ -359,81 +454,6 @@ export default function Dashboard() {
               })}
             </div>
 
-            {/* FORECAST CHART */}
-            <div className="glass-panel p-6 lg:p-7 rounded-2xl border border-white/10 hover:border-emerald-500/30 transition-all duration-300">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 pb-4 border-b border-white/10">
-                <h3 className="text-base font-black text-white flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30">
-                    <Activity size={16} className="text-emerald-400" />
-                  </div>
-                  <span>6-Hour AQI Forecast</span>
-                </h3>
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                  Predictive Model
-                </span>
-              </div>
-
-              <div className="h-72">
-                {forecastLoading ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-3">
-                    <Activity className="w-8 h-8 text-emerald-400 animate-spin" />
-                    <p className="text-sm text-slate-400 font-medium">Generating forecast…</p>
-                  </div>
-                ) : forecast6h.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={forecast6h.map(item => ({
-                        time: item.hour,
-                        aqi: item.aqi
-                      }))}
-                    >
-                      <defs>
-                        <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={theme.stroke} stopOpacity={0.4} />
-                          <stop offset="95%" stopColor={theme.stroke} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-
-                      <XAxis
-                        dataKey="time"
-                        tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
-                        stroke="#334155"
-                        strokeWidth={1}
-                      />
-                      <YAxis
-                        tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 600 }}
-                        stroke="#334155"
-                        strokeWidth={1}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          borderRadius: '12px',
-                          padding: '12px',
-                          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                        }}
-                        labelStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '12px' }}
-                        itemStyle={{ color: theme.stroke, fontWeight: 'bold' }}
-                      />
-
-                      <Area
-                        type="monotone"
-                        dataKey="aqi"
-                        stroke={theme.stroke}
-                        strokeWidth={3}
-                        fill="url(#forecastGradient)"
-                        animationDuration={1000}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-sm text-slate-400">Forecast data unavailable</p>
-                  </div>
-                )}
-              </div>
-            </div>
 
             {/* ADVANCED ANALYTICS */}
             <AdvancedAnalytics
@@ -457,7 +477,10 @@ export default function Dashboard() {
 
             {/* PERSONALIZED HEALTH ADVICE - EXTRA MARGIN */}
             <div className="glass-panel rounded-2xl overflow-hidden border border-white/10 hover:border-emerald-500/30 transition-all duration-300 mt-6">
-              <PersonalizedHealthAdvice />
+              <PersonalizedHealthAdvice
+                aqi={data?.current_aqi?.value || 100}
+                location={selectedLocation?.name || 'Your Area'}
+              />
             </div>
           </aside>
         </div>

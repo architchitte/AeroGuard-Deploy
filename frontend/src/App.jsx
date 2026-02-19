@@ -3,6 +3,7 @@ import Navbar from "./Components/Navbar";
 
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
+import HealthRisk from "./pages/HealthRisk";
 
 function AppLayout() {
   const location = useLocation();
@@ -17,6 +18,7 @@ function AppLayout() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/health-risk" element={<HealthRisk />} />
       </Routes>
     </div>
   );

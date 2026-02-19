@@ -340,3 +340,32 @@ CITY_COORDS = {
     "Jaipur": (26.9124, 75.7873),
     "Lucknow": (26.8467, 80.9462),
 }
+
+@bp.route("/search", methods=["GET"])
+def search_location():
+    """
+    Proxy location search to Nominatim to avoid CORS issues.
+    """
+    query = request.args.get('q')
+    if not query:
+        return jsonify({"status": "error", "message": "Query parameter 'q' is required"}), 400
+    
+    import requests
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {
+            "q": query,
+            "format": "json",
+            "limit": 5,
+            "countrycodes": "in",
+            "bounded": 1,
+            "viewbox": "68.7,37.1,97.25,6.5"
+        }
+        headers = {
+            "User-Agent": "AeroGuard/1.0"
+        }
+        response = requests.get(url, params=params, headers=headers)
+        return jsonify(response.json()), response.status_code
+    except Exception as e:
+        logger.error(f"Location search proxy failed: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
