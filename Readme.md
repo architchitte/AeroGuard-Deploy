@@ -49,22 +49,6 @@ This project demonstrates **real-world system design**, **API integration**, **d
 
 ---
 
-## 🛠️ Tech Stack
-
-### Frontend
-- React (Vite)
-- Tailwind CSS
-- Framer Motion
-- Recharts
-- Lucide Icons
-- Axios
-
-### Backend
-- Python (Flask)
-- Requests
-- WAQI API
-- Environment-based configuration
-
 ---
 
 ## 🔌 API Endpoints
@@ -72,22 +56,6 @@ This project demonstrates **real-world system design**, **API integration**, **d
 ### Get AQI by City
 
 ---
-
-## 🛠️ Tech Stack
-
-### Frontend
-- React (Vite)
-- Tailwind CSS
-- Framer Motion
-- Recharts
-- Lucide Icons
-- Axios
-
-### Backend
-- Python (Flask)
-- Requests
-- WAQI API
-- Environment-based configuration
 
 ---
 
@@ -99,11 +67,6 @@ GET /api/v1/realtime-aqi/city/<city_name>
 
 ### Get AQI by Coordinates
 GET /api/v1/realtime-aqi/coordinates?latitude=..&longitude=..
-
-
-### Popular Indian Cities
-GET /api/v1/realtime-aqi/popular-cities
-
 
 ### Health Check
 GET /api/v1/realtime-aqi/health
