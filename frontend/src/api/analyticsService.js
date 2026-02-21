@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -50,7 +49,7 @@ export const analyticsService = {
   /* ---------- Health ---------- */
   checkHealth: async () => {
     try {
-      const response = await apiClient.get('/api/v1/models/health');
+      const response = await apiClient.get('/api/v1/health');
       return response.data;
     } catch (error) {
       return { status: 'offline', timestamp: new Date().toISOString() };
@@ -113,15 +112,15 @@ export const analyticsService = {
     /* Severity factor based on AQI */
     const severity =
       aqi > 200 ? 1.0 :
-      aqi > 150 ? 0.9 :
-      aqi > 100 ? 0.75 :
-      0.6;
+        aqi > 150 ? 0.9 :
+          aqi > 100 ? 0.75 :
+            0.6;
 
     /* Time smoothing factor */
     const timeFactor =
       timeRange >= 30 ? 0.85 :
-      timeRange >= 14 ? 0.95 :
-      1.05;
+        timeRange >= 14 ? 0.95 :
+          1.05;
 
     /* Metro adjustment */
     const metroBoost = isMetro ? 1.05 : 0.95;

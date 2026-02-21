@@ -46,9 +46,18 @@ class Config:
     ENV = os.getenv("FLASK_ENV", "production")
     DEBUG = os.getenv("FLASK_DEBUG", "false").lower() == "true"
     TESTING = False
-    SECRET_KEY = os.getenv(
-        "SECRET_KEY", "dev-key-change-in-production"
-    )
+    
+    # SECRET_KEY must be set in production
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    if not SECRET_KEY:
+        if ENV == "production":
+            raise ValueError(
+                "SECRET_KEY environment variable must be set in production. "
+                "Generate one with: python -c 'import secrets; print(secrets.token_hex(32))'"
+            )
+        else:
+            # Development fallback only
+            SECRET_KEY = "dev-key-for-development-only-change-in-production"
 
     # ========================================================================
     # API Settings
@@ -128,17 +137,30 @@ class Config:
     # ========================================================================
     # Session & Security
     # ========================================================================
-    SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Lax"
-    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    SESSION_COOKIE_SECURE = True  # HTTPS only in production
+    SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access
+    SESSION_COOKIE_SAMESITE = "Strict"  # Prevent CSRF
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=1)  # Shorter sessions
+
+    # ========================================================================
+    # JWT Configuration
+    # ========================================================================
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    if not JWT_SECRET_KEY:
+        if ENV == "production":
+            raise ValueError("JWT_SECRET_KEY must be set in production")
+        else:
+            JWT_SECRET_KEY = SECRET_KEY
+    
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    JWT_ALGORITHM = "HS256"
+    JWT_BLACKLIST_ENABLED = False  # Enable when implementing token revocation
 
     # ========================================================================
     # Logging Settings
     # ========================================================================
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-    # JWT secret (falls back to SECRET_KEY if not provided)
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 
 
 class DevelopmentConfig(Config):
@@ -158,6 +180,9 @@ class DevelopmentConfig(Config):
     DEBUG = True
     JSONIFY_PRETTYPRINT_REGULAR = True
     LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
+    
+    # Allow HTTP cookies in development
+    SESSION_COOKIE_SECURE = False
 
 
 class TestingConfig(Config):
@@ -197,7 +222,10 @@ class ProductionConfig(Config):
     LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
     SESSION_COOKIE_SECURE = True  # Require HTTPS in production
 
-    # Production must specify origins
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv(
-        "CORS_ORIGINS"
-    ) else ["https://yourdomain.com"]
+    # Production must specify origins - no defaults
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
+    if not CORS_ORIGINS or CORS_ORIGINS == ['']:
+        raise ValueError(
+            "CORS_ORIGINS environment variable must be explicitly set in production. "
+            "Example: CORS_ORIGINS=https://app.aeroguard.com,https://www.aeroguard.com"
+        )

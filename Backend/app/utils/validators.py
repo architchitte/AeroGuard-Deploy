@@ -14,7 +14,7 @@ class InputValidator:
     @staticmethod
     def validate_location_id(location_id: Any) -> Tuple[bool, str]:
         """
-        Validate location ID format.
+        Validate location ID format with strict security checks.
 
         Args:
             location_id: Location identifier to validate
@@ -31,11 +31,13 @@ class InputValidator:
         if len(location_id) == 0:
             return False, "Location ID cannot be empty"
 
-        if len(location_id) > 100:
-            return False, "Location ID cannot exceed 100 characters"
+        if len(location_id) > 50:
+            return False, "Location ID cannot exceed 50 characters"
 
-        if not re.match(r"^[a-zA-Z0-9\s,._%+-]+$", location_id):
-            return False, "Location ID can only contain alphanumeric characters, spaces, commas, dots, and common URL symbols"
+        # Strict validation: alphanumeric, underscore, hyphen, and space only
+        # This prevents SQL injection and path traversal
+        if not re.match(r'^[a-zA-Z0-9_\-\s]+$', location_id):
+            return False, "Location ID can only contain letters, numbers, underscores, hyphens, and spaces"
 
         return True, ""
 

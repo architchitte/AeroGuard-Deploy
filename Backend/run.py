@@ -135,7 +135,7 @@ def main():
         logger.info(f"Starting Flask development server...")
         logger.info(f"Open browser at: http://{host if host != '0.0.0.0' else 'localhost'}:{port}")
         logger.info(f"Health check: http://{host if host != '0.0.0.0' else 'localhost'}:{port}/health")
-        logger.info(f"Quick start: See HACKATHON_QUICKSTART.md\n")
+        logger.info(f"Quick start: See Readme.md for setup instructions\n")
 
         app.run(
             host=host,

@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Navbar({ variant = "dashboard" }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const navigate = useNavigate();
 
     /* ================= NAV ITEMS ================= */
 
@@ -12,9 +14,9 @@ export default function Navbar({ variant = "dashboard" }) {
     ];
 
     const dashboardNavItems = [
-        { path: '#dashboard', icon: '📊', label: 'Dashboard' },
-        { path: '#dashboard', icon: '🗺️', label: 'Analytics' },
-        { path: '/', icon: '🚀', label: 'Landing' },
+        { path: '/dashboard', icon: '📊', label: 'Dashboard' },
+        { path: '/health-risk', icon: '❤️', label: 'Health' },
+        { path: '/', icon: '🏠', label: 'Home' },
     ];
 
     const navItems = variant === "landing" ? landingNavItems : dashboardNavItems;
@@ -24,9 +26,9 @@ export default function Navbar({ variant = "dashboard" }) {
     const scrollToSection = (path) => {
         setIsMobileMenuOpen(false);
 
-        // Route navigation for Explore button
+        // Route navigation
         if (path.startsWith("/")) {
-            window.location.href = path;
+            navigate(path);
             return;
         }
 

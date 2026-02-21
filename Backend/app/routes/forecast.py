@@ -188,36 +188,66 @@ def get_current_conditions(location_id: str):
 @bp.route("/<location_id>/6h", methods=["GET"])
 def get_6h_forecast(location_id: str):
     """
-    Get 6-hour AQI forecast for a specific location.
+    Get 6-hour AQI forecast for a specific location using hybrid ensemble model.
 
     Returns:
         JSON with hourly AQI predictions for next 6 hours
     """
     try:
-        # Validate location id
+        # Validate and sanitize location id
         is_valid, error_msg = InputValidator.validate_location_id(location_id)
         if not is_valid:
             raise ValidationError(error_msg)
+        
+        location_id = InputValidator.sanitize_string(location_id, max_length=50)
 
-        forecast_service, data_service = _get_services()
+        # Try to use hybrid model first
+        try:
+            from app.services.hybrid_forecast_service import get_hybrid_forecast_service
+            
+            hybrid_service = get_hybrid_forecast_service()
+            
+            # Get current AQI if available
+            try:
+                import axios
+                from app.services.realtime_aqi_service import RealtimeAQIService
+                aqi_service = RealtimeAQIService()
+                aqi_data = aqi_service.get_city_aqi(location_id)
+                current_aqi = aqi_data.get('aqi') if aqi_data else None
+            except:
+                current_aqi = None
+            
+            # Generate hybrid forecast
+            forecast_result = hybrid_service.generate_6h_forecast(
+                location=location_id,
+                current_aqi=current_aqi
+            )
+            
+            return jsonify(forecast_result), 200
+            
+        except Exception as hybrid_error:
+            current_app.logger.warning(f"Hybrid model failed, falling back to ensemble: {hybrid_error}")
+            
+            # Fallback to original ensemble method
+            forecast_service, data_service = _get_services()
 
-        # Validate location exists
-        is_valid, msg = data_service.validate_location(location_id)
-        if not is_valid:
-            raise ValidationError(msg)
+            # Validate location exists
+            is_valid, msg = data_service.validate_location(location_id)
+            if not is_valid:
+                raise ValidationError(msg)
 
-        # Fetch short historical window (last 48h is enough)
-        historical_data = data_service.fetch_historical_data(
-            location_id, days=2
-        )
+            # Fetch short historical window (last 48h is enough)
+            historical_data = data_service.fetch_historical_data(
+                location_id, days=2
+            )
 
-        # 🔥 CALL YOUR 6H FORECAST METHOD
-        forecast_result = forecast_service.generate_6h_forecast(
-            location_id=location_id,
-            historical_data=historical_data,
-        )
+            # Call original 6H forecast method
+            forecast_result = forecast_service.generate_6h_forecast(
+                location_id=location_id,
+                historical_data=historical_data,
+            )
 
-        return jsonify(forecast_result), 200
+            return jsonify(forecast_result), 200
 
     except ValidationError as e:
         return jsonify(

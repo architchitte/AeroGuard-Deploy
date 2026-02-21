@@ -14,9 +14,9 @@ import {
   Globe,
 } from "lucide-react";
 
-import LocationSearch from "../components/LocationSelector";
+import LocationSearch from "../Components/LocationSelector";
 import { fetchAQI, fetchMapData } from "../api/aqi";
-import { HeatmapLayer } from "react-leaflet-heatmap-layer-v3";
+import HeatmapLayer from "./HeatmapLayer";  // Custom heatmap component
 
 
 /* ================= MAP CONTROLLER ================= */
@@ -205,16 +205,16 @@ export default function PollutionHeatmap() {
 
         {/* HEATMAP LAYER */}
         {heatmapPoints.length > 0 && (
-            <HeatmapLayer
-              points={heatmapPoints}
-              longitudeExtractor={(p) => p.lng}
-              latitudeExtractor={(p) => p.lat}
-              intensityExtractor={(p) => p.value}
-              radius={45}     // spread of pollution
-              blur={35}       // smoothness
-              max={400}       // AQI scale cap
-            />
-          )}    
+          <HeatmapLayer
+            points={heatmapPoints}
+            longitudeExtractor={(p) => p.lng}
+            latitudeExtractor={(p) => p.lat}
+            intensityExtractor={(p) => p.value}
+            radius={45}     // spread of pollution
+            blur={35}       // smoothness
+            max={400}       // AQI scale cap
+          />
+        )}
 
 
         {/* NATIONWIDE STATIONS */}

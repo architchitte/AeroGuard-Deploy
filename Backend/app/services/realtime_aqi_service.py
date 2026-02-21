@@ -19,8 +19,8 @@ class RealtimeAQIService:
 
     def __init__(self):
         """Initialize the service with API credentials."""
-        self.api_key = os.getenv('REALTIME_AQI_API_KEY')
-        self.base_url = os.getenv('REALTIME_AQI_BASE_URL', 'https://api.waqi.info')
+        self.api_key = os.getenv('REALTIME_WAQI_API_KEY') or os.getenv('REALTIME_AQI_API_KEY')
+        self.base_url = os.getenv('REALTIME_WAQI_BASE_URL') or os.getenv('REALTIME_AQI_BASE_URL', 'https://api.waqi.info')
         self.timeout = 10  # seconds
 
         if not self.api_key:
@@ -36,20 +36,27 @@ class RealtimeAQIService:
             return self._get_mock_data(city)
 
         try:
-            url = f"{self.base_url}/feed/{city}/?token={self.api_key}"
-            response = requests.get(url, timeout=self.timeout)
+            # Construct URL without exposing API key in URL
+            url = f"{self.base_url}/feed/{city}/"
+            params = {"token": self.api_key}
+            
+            response = requests.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
 
             data = response.json()
 
             if data.get('status') != 'ok':
-                logger.warning(f"API returned non-ok status for {city}: {data.get('data')}")
+                logger.warning(f"API returned non-ok status for {city}")
                 return self._get_mock_data(city)
 
             return self._parse_aqi_data(data.get('data', {}))
 
+        except requests.RequestException as e:
+            # Don't log the full URL which might contain API key
+            logger.error(f"Failed to fetch AQI for {city}: {type(e).__name__}")
+            return self._get_mock_data(city)
         except Exception as e:
-            logger.error(f"Failed to fetch AQI for {city}: {e}")
+            logger.error(f"Unexpected error fetching AQI for {city}: {type(e).__name__}")
             return self._get_mock_data(city)
 
     def get_multiple_cities_aqi(self, cities: List[str]) -> Dict[str, Optional[Dict[str, Any]]]:
@@ -71,8 +78,10 @@ class RealtimeAQIService:
              return self._get_mock_data(f"Loc ({latitude:.2f}, {longitude:.2f})")
 
         try:
-            url = f"{self.base_url}/feed/geo:{latitude};{longitude}/?token={self.api_key}"
-            response = requests.get(url, timeout=self.timeout)
+            url = f"{self.base_url}/feed/geo:{latitude};{longitude}/"
+            params = {"token": self.api_key}
+            
+            response = requests.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
 
             data = response.json()
@@ -82,8 +91,11 @@ class RealtimeAQIService:
 
             return self._parse_aqi_data(data.get('data', {}))
 
+        except requests.RequestException as e:
+            logger.error(f"Failed to fetch AQI for coordinates: {type(e).__name__}")
+            return self._get_mock_data(f"Loc ({latitude:.2f}, {longitude:.2f})")
         except Exception as e:
-            logger.error(f"Failed to fetch AQI for coords: {e}")
+            logger.error(f"Unexpected error for coordinates: {type(e).__name__}")
             return self._get_mock_data(f"Loc ({latitude:.2f}, {longitude:.2f})")
 
     def _get_mock_data(self, city_name: str) -> Dict[str, Any]:
@@ -152,6 +164,7 @@ class RealtimeAQIService:
                 'latitude': geo[0],
                 'longitude': geo[1],
                 'pollutants': pollutants,
+                'dominant': data.get('dominentpol', 'PM2.5'),
                 'url': data.get('attribution', [{}])[0].get('url'),
                 'last_updated': data.get('time', {}).get('iso', datetime.now().isoformat()),
                 'source': data.get('attribution', [{}])[0].get('name', 'Unknown'),
