@@ -61,6 +61,14 @@ const getAQILabel = (aqi) => {
   if (aqi <= 300) return "Very Unhealthy";
   return "Hazardous";
 }
+const getHealthAdvice = (aqi) => {
+  if (aqi <= 50) return "Air quality is ideal for outdoor activities.";
+  if (aqi <= 100) return "Air quality is acceptable; however, sensitive individuals should monitor their symptoms.";
+  if (aqi <= 150) return "Members of sensitive groups may experience health effects. The general public is less likely to be affected.";
+  if (aqi <= 200) return "Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.";
+  if (aqi <= 300) return "Health warnings of emergency conditions. The entire population is more likely to be affected.";
+  return "Health alert: everyone may experience more serious health effects.";
+};
 
 /* ================= CONSTANTS ================= */
 
@@ -118,6 +126,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [lastSync, setLastSync] = useState(new Date());
   const [hubData, setHubData] = useState([]);
+  const [pollutantData, setPollutantData] = useState(null);
 
   // Sync with external location if provided
   useEffect(() => {
@@ -166,6 +175,12 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
       try {
         const data = await fetchAQI(location.lat, location.lon);
         setAqi(data.aqi);
+        setPollutantData({
+          pm25: data.pm25,
+          pm10: data.pm10,
+          no2: data.no2,
+          o3: data.o3
+        });
       } catch (err) {
         console.error("AQI fetch failed:", err);
       }
@@ -209,12 +224,23 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
     value: Math.min(s.aqi, 500),
   }));
 
-  const pollutants = location ? [
-    { name: "PM2.5", value: "76", unit: "µg/m³", icon: Droplets, color: "text-emerald-400" },
-    { name: "PM10", value: "85", unit: "µg/m³", icon: Wind, color: "text-yellow-400" },
-    { name: "NO2", value: "40", unit: "ppb", icon: CloudRain, color: "text-blue-400" },
-    { name: "O3", value: "12", unit: "ppb", icon: Wind, color: "text-cyan-400" },
-  ] : [];
+  const POLLUTANT_MAP = {
+    pm25: { name: "PM2.5", unit: "µg/m³", icon: Droplets },
+    pm10: { name: "PM10", unit: "µg/m³", icon: Wind },
+    no2: { name: "NO2", unit: "ppb", icon: CloudRain },
+    o3: { name: "O3", unit: "ppb", icon: Wind },
+    so2: { name: "SO2", unit: "ppb", icon: Droplets },
+    co: { name: "CO", unit: "ppm", icon: Activity }
+  };
+
+  const pollutants = pollutantData ? Object.entries(pollutantData)
+    .filter(([key, value]) => value !== null && POLLUTANT_MAP[key])
+    .map(([key, value]) => ({
+      ...POLLUTANT_MAP[key],
+      value: value
+    })) : [];
+
+  const healthAdvice = getHealthAdvice(aqi ?? 0);
 
   return (
     <div className="relative w-full h-[850px] bg-[#020617] rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden group/map-section ring-1 ring-white/10">
@@ -351,7 +377,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
 
       {/* 2. CENTER-LEFT: DATA PANEL */}
       {location && (
-        <div className={`absolute top-24 left-8 z-[900] transition-all duration-500 ease-in-out ${isPanelOpen ? 'translate-x-0 opacity-100' : '-translate-x-[110%] opacity-0'}`}>
+        <div className={`absolute top-[160px] left-8 z-[900] transition-all duration-500 ease-in-out ${isPanelOpen ? 'translate-x-0 opacity-100' : '-translate-x-[110%] opacity-0'}`}>
           <div className="w-[360px] glass-panel rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden backdrop-blur-3xl bg-slate-950/60 p-8 space-y-8">
             <div className="flex justify-between items-start">
               <div className="space-y-1">
@@ -392,32 +418,14 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
                   <div
                     className="h-full transition-all duration-1000"
                     style={{
-                      width: `${Math.min(100, (aqi / 300) * 100)}%`,
+                      width: `${Math.min(100, ((aqi ?? 0) / 300) * 100)}%`,
                       backgroundColor: getAQIColor(aqi ?? 0),
                       boxShadow: `0 0 10px ${getAQIColor(aqi ?? 0)}`
                     }}
-                  />
-                </div>
+                  />                </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Key Pollutants</p>
-              <div className="grid grid-cols-2 gap-3">
-                {pollutants.map((p) => (
-                  <div key={p.name} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all group/p">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] uppercase text-slate-500 font-bold">{p.name}</p>
-                      <p.icon size={12} className="text-slate-600 group-hover/p:text-teal-400" />
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-black text-white">{p.value}</span>
-                      <span className="text-[10px] text-slate-500 font-bold">{p.unit}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             <div className="p-5 rounded-3xl bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent border border-teal-500/20">
               <div className="flex items-center gap-2 mb-2">
@@ -425,7 +433,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
                 <span className="text-[10px] font-black uppercase text-teal-400 tracking-widest">AI Health Pulse</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed italic mb-4">
-                "Safe for most outdoor activities in your area today."
+                "{healthAdvice}"
               </p>
 
               <button

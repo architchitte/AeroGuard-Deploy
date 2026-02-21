@@ -26,7 +26,6 @@ import AeroIntelligenceBriefing from "../Components/AeroIntelligenceBriefing";
 import PersonalizedHealthAdvice from "../Components/PersonalizedHealthAdvice";
 import AdvancedAnalytics from "../Components/AdvancedAnalytics";
 import PollutantDetails from "../Components/PollutantDetails";
-import PollutionHeatmap from "../Components/PollutionHeatmap";
 import { useForecast6h } from "../hooks/forcast6h.js";
 
 /* ---------------- PERSONAS ---------------- */
@@ -490,16 +489,6 @@ export default function Dashboard() {
         </div>
 
       </main>
-
-      {/* ================= NATIONWIDE HEATMAP - FULL WIDTH SECTION ================= */}
-      <section className="w-full pb-20 relative z-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-[1600px] mx-auto">
-          <PollutionHeatmap
-            externalLocation={selectedLocation}
-            onLocationSelect={setSelectedLocation}
-          />
-        </div>
-      </section>
 
       {/* ================= FOOTER ================= */}
       <footer className="mt-auto border-t border-white/10 py-8 text-center text-xs text-slate-500 relative z-10 backdrop-blur-sm">

@@ -26,10 +26,9 @@ export const dashboardService = {
             let aqiData = null;
             try {
                 // If coordinates are provided, use them for consistency with the heatmap
-                const endpoint = (lat && lon)
+                const endpoint = (lat != null && lon != null)
                     ? `/api/v1/realtime-aqi/coordinates?latitude=${lat}&longitude=${lon}`
                     : `/api/v1/realtime-aqi/city/${city}`;
-
                 const aqiResponse = await apiClient.get(endpoint);
                 if (aqiResponse.data.status === 'success') {
                     aqiData = aqiResponse.data.data;
