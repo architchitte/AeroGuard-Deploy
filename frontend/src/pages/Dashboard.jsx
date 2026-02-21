@@ -20,12 +20,13 @@ import {
 } from "lucide-react";
 
 import { useAQIData } from "../hooks/useAQIData";
-import CityHeatmap from "../Components/CityHeatmap";
+// CityHeatmap removed in favor of PollutionHeatmap
 import LocationSearch from "../Components/LocationSelector";
 import AeroIntelligenceBriefing from "../Components/AeroIntelligenceBriefing";
 import PersonalizedHealthAdvice from "../Components/PersonalizedHealthAdvice";
 import AdvancedAnalytics from "../Components/AdvancedAnalytics";
 import PollutantDetails from "../Components/PollutantDetails";
+import PollutionHeatmap from "../Components/PollutionHeatmap";
 import { useForecast6h } from "../hooks/forcast6h.js";
 
 /* ---------------- PERSONAS ---------------- */
@@ -44,14 +45,26 @@ const POLLUTANT_CONFIG = {
   co: { name: "CO", unit: "ppm", icon: CloudRain },
 };
 
+import { useLocation } from "react-router-dom";
+
 export default function Dashboard() {
-  const [selectedLocation, setSelectedLocation] = useState(null);
+  const locationState = useLocation();
+  const [selectedLocation, setSelectedLocation] = useState(locationState.state?.selectedLocation || null);
   const [selectedPersona, setSelectedPersona] = useState("general");
+
+  // Sync state if navigation occurs with new state
+  useEffect(() => {
+    if (locationState.state?.selectedLocation) {
+      setSelectedLocation(locationState.state.selectedLocation);
+    }
+  }, [locationState.state?.selectedLocation]);
 
   // ✅ Hooks ALWAYS called unconditionally
   const { data, loading, error } = useAQIData(
     selectedLocation?.name ?? null,
-    selectedPersona
+    selectedPersona,
+    selectedLocation?.lat ?? null,
+    selectedLocation?.lon ?? null
   );
 
   const { forecast6h, summary, loading: forecastLoading } = useForecast6h(selectedLocation);
@@ -454,7 +467,6 @@ export default function Dashboard() {
               })}
             </div>
 
-
             {/* ADVANCED ANALYTICS */}
             <AdvancedAnalytics
               location={selectedLocation}
@@ -462,29 +474,32 @@ export default function Dashboard() {
             />
           </section>
 
-          {/* ================= RIGHT SIDEBAR - FIXED OVERLAPPING ================= */}
+          {/* ================= RIGHT SIDEBAR ================= */}
           <aside className="lg:col-span-3 space-y-6">
-            {/* HEATMAP - NO STICKY */}
-            <div className="glass-panel p-3 rounded-2xl border border-white/10 hover:border-cyan-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10">
-              <div className="h-[360px] w-full rounded-xl overflow-hidden relative bg-slate-900/50">
-                <CityHeatmap
-                  lat={selectedLocation.lat}
-                  lon={selectedLocation.lon}
-                  aqi={data.current_aqi.value}
-                />
-              </div>
-            </div>
-
-            {/* PERSONALIZED HEALTH ADVICE - EXTRA MARGIN */}
-            <div className="glass-panel rounded-2xl overflow-hidden border border-white/10 hover:border-emerald-500/30 transition-all duration-300 mt-6">
+            {/* PERSONALIZED HEALTH ADVICE */}
+            <div className="glass-panel rounded-2xl overflow-hidden border border-white/10 hover:border-emerald-500/30 transition-all duration-300">
               <PersonalizedHealthAdvice
                 aqi={data?.current_aqi?.value || 100}
                 location={selectedLocation?.name || 'Your Area'}
               />
             </div>
+
+            {/* POLLUTANT DETAILS - Moved from sidebar if exists */}
+            <PollutantDetails pollutants={pollutants} />
           </aside>
         </div>
+
       </main>
+
+      {/* ================= NATIONWIDE HEATMAP - FULL WIDTH SECTION ================= */}
+      <section className="w-full pb-20 relative z-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] mx-auto">
+          <PollutionHeatmap
+            externalLocation={selectedLocation}
+            onLocationSelect={setSelectedLocation}
+          />
+        </div>
+      </section>
 
       {/* ================= FOOTER ================= */}
       <footer className="mt-auto border-t border-white/10 py-8 text-center text-xs text-slate-500 relative z-10 backdrop-blur-sm">

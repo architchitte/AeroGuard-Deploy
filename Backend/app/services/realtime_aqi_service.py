@@ -68,6 +68,50 @@ class RealtimeAQIService:
             results[city] = self.get_city_aqi(city)
         return results
 
+    def get_map_bounds_data(
+        self, lat_min: float, lon_min: float, lat_max: float, lon_max: float
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetch AQI data for all stations within a map bounding box.
+        Used for generating detailed heatmaps.
+        """
+        if not self.api_key:
+            logger.warning("API key not configured, returning empty list for bounds.")
+            return []
+
+        try:
+            # WAQI map bounds API: /map/bounds/?latlng=lat_min,lon_min,lat_max,lon_max&token=...
+            url = f"{self.base_url}/map/bounds/"
+            params = {
+                "token": self.api_key,
+                "latlng": f"{lat_min},{lon_min},{lat_max},{lon_max}"
+            }
+            
+            response = requests.get(url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+
+            data = response.json()
+
+            if data.get('status') != 'ok':
+                logger.warning(f"Map bounds API returned status: {data.get('status')}")
+                return []
+
+            stations = data.get('data', [])
+            return [
+                {
+                    "lat": s.get("lat"),
+                    "lon": s.get("lon"),
+                    "aqi": s.get("aqi"),
+                    "station": s.get("station", {}).get("name", "Unknown Station"),
+                    "uid": s.get("uid")
+                }
+                for s in stations if s.get("aqi") != "-"
+            ]
+
+        except Exception as e:
+            logger.error(f"Failed to fetch map bounds data: {str(e)}")
+            return []
+
     def get_city_by_coordinates(
         self, latitude: float, longitude: float
     ) -> Optional[Dict[str, Any]]:

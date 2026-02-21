@@ -20,7 +20,7 @@ const fetchAQI = async (lat, lon) => {
 
 const fetchMapData = async () => {
   const res = await fetch(
-    `${API_BASE_URL}/api/v1/realtime-aqi/popular-cities`
+    `${API_BASE_URL}/api/v1/realtime-aqi/nationwide`
   );
 
   if (!res.ok) {
@@ -33,14 +33,12 @@ const fetchMapData = async () => {
     throw new Error(json.message || "Invalid AQI data");
   }
 
-  return Object.entries(json.data)
-    .filter(([_, v]) => v && v.lat && v.lon && v.aqi)
-    .map(([city, v]) => ({
-      station: city,
-      lat: v.lat,
-      lon: v.lon,
-      aqi: v.aqi,
-    }));
+  return json.data.map((v) => ({
+    station: v.station,
+    lat: v.lat,
+    lon: v.lon,
+    aqi: v.aqi,
+  }));
 };
 
 export { fetchAQI, fetchMapData };

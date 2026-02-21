@@ -283,36 +283,13 @@ def health_check():
 @bp.route("/nationwide", methods=["GET"])
 def get_nationwide_aqi():
     """
-    Get nationwide AQI points for heatmap visualization.
-
-    Returns:
-        JSON list of AQI points with lat/lon
+    Get nationwide AQI points for heatmap visualization using map bounds.
     """
     try:
-        # Use popular cities as grid anchors
-        aqi_results = aqi_service.get_multiple_cities_aqi(POPULAR_INDIAN_CITIES)
-
-        points = []
-        for city, aqi_data in aqi_results.items():
-            if not aqi_data:
-                continue
-
-            # Ensure lat/lon exist (WAQI provides them)
-            coords = CITY_COORDS.get(city)
-
-            if not coords:
-                continue
-
-            lat, lon = coords
-
-            points.append({
-                "station": city,
-                "lat": lat,
-                "lon": lon,
-                "aqi": aqi_data["aqi"],
-                "category": aqi_service.get_aqi_category(aqi_data["aqi"])
-            })
-
+        # India Bounding Box (approximate)
+        # Lat: 6.5 to 37.1
+        # Lon: 68.7 to 97.25
+        points = aqi_service.get_map_bounds_data(6.5, 68.7, 37.1, 97.25)
 
         return jsonify({
             "status": "success",
