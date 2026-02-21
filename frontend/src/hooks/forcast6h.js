@@ -9,13 +9,17 @@ export const useForecast6h = (location) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!location?.name) return;
+    if (!location?.name && !(location?.lat && location?.lon)) return;
 
     const fetchForecast = async () => {
       setLoading(true);
       try {
+        const params = new URLSearchParams();
+        if (location.lat) params.append("latitude", location.lat);
+        if (location.lon) params.append("longitude", location.lon);
+
         const res = await axios.get(
-          `${API_BASE_URL}/api/v1/forecast/${location.name}/6h`
+          `${API_BASE_URL}/api/v1/forecast/${location.name}/6h?${params.toString()}`
         );
 
         setForecast6h(res.data?.forecast || []);
@@ -30,7 +34,7 @@ export const useForecast6h = (location) => {
     };
 
     fetchForecast();
-  }, [location?.name]);
+  }, [location?.name, location?.lat, location?.lon]);
 
   return { forecast6h, summary, loading };
 };

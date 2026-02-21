@@ -329,9 +329,10 @@ class HybridForecastService:
         return ensemble
 
     def _generate_fallback_forecast(self, current_aqi: Optional[float]) -> List[float]:
-        """Persistence + Noise fallback."""
+        """Persistence + Noise fallback anchored to current AQI."""
         base = current_aqi if current_aqi is not None else 100.0
-        return [max(0, base + np.random.normal(0, 5)) for _ in range(6)]
+        # Instead of just noise, we project the base value forward
+        return [max(0, base + (i * 1.5) + np.random.normal(0, 3)) for i in range(6)]
 
     def _get_aqi_category(self, aqi: float) -> str:
         """Standard AQI categorization."""

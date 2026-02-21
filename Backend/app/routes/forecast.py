@@ -209,10 +209,18 @@ def get_6h_forecast(location_id: str):
             
             # Get current AQI if available
             try:
-                import axios
                 from app.services.realtime_aqi_service import RealtimeAQIService
                 aqi_service = RealtimeAQIService()
-                aqi_data = aqi_service.get_city_aqi(location_id)
+                
+                # Use coordinates if provided for best anchoring
+                lat = request.args.get("latitude", type=float)
+                lon = request.args.get("longitude", type=float)
+                
+                if lat is not None and lon is not None:
+                    aqi_data = aqi_service.get_city_by_coordinates(lat, lon)
+                else:
+                    aqi_data = aqi_service.get_city_aqi(location_id)
+                
                 current_aqi = aqi_data.get('aqi') if aqi_data else None
             except:
                 current_aqi = None

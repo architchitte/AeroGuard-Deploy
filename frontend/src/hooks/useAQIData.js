@@ -8,7 +8,10 @@ export const useAQIData = (city, persona, lat = null, lon = null) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!city && (lat == null || lon == null)) return;
+    if (!city && (lat == null || lon == null)) {
+      setLoading(false);
+      return;
+    }
     const fetchData = async () => {
       setLoading(true);
       setError(null);
