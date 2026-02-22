@@ -222,7 +222,7 @@ def get_6h_forecast(location_id: str):
                     aqi_data = aqi_service.get_city_aqi(location_id)
                 
                 current_aqi = aqi_data.get('aqi') if aqi_data else None
-            except:
+            except Exception:
                 current_aqi = None
             
             # Generate hybrid forecast

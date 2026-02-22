@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 
 import { useAQIData } from "../hooks/useAQIData";
-// CityHeatmap removed in favor of PollutionHeatmap
 import LocationSearch from "../Components/LocationSelector";
 import AeroIntelligenceBriefing from "../Components/AeroIntelligenceBriefing";
 import PersonalizedHealthAdvice from "../Components/PersonalizedHealthAdvice";
@@ -260,7 +259,14 @@ export default function Dashboard() {
                 <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30">
                   <MapPin size={14} className="text-emerald-400" />
                 </div>
-                <span className="group-hover:text-emerald-400 transition-colors">{selectedLocation.name}</span>
+                <div className="flex flex-col">
+                  <span className="group-hover:text-emerald-400 transition-colors">{selectedLocation.name}</span>
+                  {data?.location?.city && data.location.city !== selectedLocation.name && (
+                    <span className="text-[10px] text-slate-500 font-medium truncate max-w-[150px]">
+                      via {data.location.city.split(',')[0]} Station
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </aside>
@@ -280,7 +286,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${theme.glow} animate-pulse`} />
                     <p className={`text-xs font-black uppercase tracking-widest ${theme.color}`}>
-                      Real-Time AQI
+                      Real-Time AQI <span className="opacity-50 font-medium">(US-EPA)</span>
                     </p>
                   </div>
                   <h2 className="text-8xl font-black text-white leading-none tracking-tight group-hover:scale-105 transition-transform duration-300">
@@ -301,8 +307,8 @@ export default function Dashboard() {
 
               <div className="relative flex items-center gap-2 mt-6 pt-4 border-t border-white/10">
                 <Activity size={12} className="text-emerald-400 animate-pulse" />
-                <p className="text-xs text-slate-400 font-medium">
-                  Last updated {new Date(data.current_aqi.updated_at).toLocaleTimeString()}
+                <p className="text-[10px] text-slate-500 font-medium">
+                  Last updated {new Date(data.current_aqi.updated_at).toLocaleTimeString()} • US-EPA Standard
                 </p>
               </div>
             </div>

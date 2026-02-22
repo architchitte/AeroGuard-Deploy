@@ -18,38 +18,56 @@ class RealtimeAQIService:
     """Service for fetching real-time AQI data from WAQI API."""
 
     def __init__(self):
-        """Initialize the service with API credentials."""
+        """Initialize the service with API credentials and cache."""
         self.api_key = os.getenv('REALTIME_WAQI_API_KEY') or os.getenv('REALTIME_AQI_API_KEY')
         self.base_url = os.getenv('REALTIME_WAQI_BASE_URL') or os.getenv('REALTIME_AQI_BASE_URL', 'https://api.waqi.info')
         self.timeout = 10  # seconds
+        
+        # Simple In-Memory Cache: {key: (timestamp, data)}
+        self._cache = {}
+        self._cache_ttl = 300  # 5 minutes in seconds
 
         if not self.api_key:
             logger.warning("REALTIME_AQI_API_KEY not configured in environment")
 
+    def _get_from_cache(self, key: str) -> Optional[Any]:
+        """Retrieve a valid item from cache if exists."""
+        import time
+        if key in self._cache:
+            timestamp, data = self._cache[key]
+            if time.time() - timestamp < self._cache_ttl:
+                return data
+        return None
+
+    def _set_to_cache(self, key: str, data: Any):
+        """Store item in cache with current timestamp."""
+        import time
+        if data:
+            self._cache[key] = (time.time(), data)
+
     def get_city_aqi(self, city: str) -> Optional[Dict[str, Any]]:
-        """
-        Fetch real-time AQI data for a specific city.
-        Falls back to Mock Data if API fails or is unconfigured.
-        """
+        """Fetch AQI for a city with caching."""
+        cache_key = f"city:{city}"
+        cached_data = self._get_from_cache(cache_key)
+        if cached_data:
+            return cached_data
+
         if not self.api_key:
-            logger.warning("API key not configured, returning MOCK data.")
             return self._get_mock_data(city)
 
         try:
-            # Construct URL without exposing API key in URL
             url = f"{self.base_url}/feed/{city}/"
             params = {"token": self.api_key}
-            
             response = requests.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-
             data = response.json()
 
             if data.get('status') != 'ok':
-                logger.warning(f"API returned non-ok status for {city}")
                 return self._get_mock_data(city)
 
-            return self._parse_aqi_data(data.get('data', {}))
+            result = self._parse_aqi_data(data.get('data', {}))
+            self._set_to_cache(cache_key, result)
+            return result
 
         except requests.RequestException as e:
             # Don't log the full URL which might contain API key
@@ -71,33 +89,30 @@ class RealtimeAQIService:
     def get_map_bounds_data(
         self, lat_min: float, lon_min: float, lat_max: float, lon_max: float
     ) -> List[Dict[str, Any]]:
-        """
-        Fetch AQI data for all stations within a map bounding box.
-        Used for generating detailed heatmaps.
-        """
+        """Fetch AQI data for stations in bounds with caching."""
+        cache_key = f"bounds:{lat_min},{lon_min},{lat_max},{lon_max}"
+        cached_data = self._get_from_cache(cache_key)
+        if cached_data:
+            return cached_data
+
         if not self.api_key:
-            logger.warning("API key not configured, returning empty list for bounds.")
             return []
 
         try:
-            # WAQI map bounds API: /map/bounds/?latlng=lat_min,lon_min,lat_max,lon_max&token=...
             url = f"{self.base_url}/map/bounds/"
             params = {
                 "token": self.api_key,
                 "latlng": f"{lat_min},{lon_min},{lat_max},{lon_max}"
             }
-            
             response = requests.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-
             data = response.json()
 
             if data.get('status') != 'ok':
-                logger.warning(f"Map bounds API returned status: {data.get('status')}")
                 return []
 
             stations = data.get('data', [])
-            return [
+            result = [
                 {
                     "lat": s.get("lat"),
                     "lon": s.get("lon"),
@@ -107,6 +122,8 @@ class RealtimeAQIService:
                 }
                 for s in stations if s.get("aqi") != "-"
             ]
+            self._set_to_cache(cache_key, result)
+            return result
 
         except Exception as e:
             logger.error(f"Failed to fetch map bounds data: {str(e)}")
@@ -115,25 +132,28 @@ class RealtimeAQIService:
     def get_city_by_coordinates(
         self, latitude: float, longitude: float
     ) -> Optional[Dict[str, Any]]:
-        """
-        Fetch AQI data for a specific location by coordinates.
-        """
+        """Fetch AQI for coordinates with caching."""
+        cache_key = f"geo:{latitude},{longitude}"
+        cached_data = self._get_from_cache(cache_key)
+        if cached_data:
+            return cached_data
+
         if not self.api_key:
              return self._get_mock_data(f"Loc ({latitude:.2f}, {longitude:.2f})")
 
         try:
             url = f"{self.base_url}/feed/geo:{latitude};{longitude}/"
             params = {"token": self.api_key}
-            
             response = requests.get(url, params=params, timeout=self.timeout)
             response.raise_for_status()
-
             data = response.json()
 
             if data.get('status') != 'ok':
                 return self._get_mock_data(f"Loc ({latitude:.2f}, {longitude:.2f})")
 
-            return self._parse_aqi_data(data.get('data', {}))
+            result = self._parse_aqi_data(data.get('data', {}))
+            self._set_to_cache(cache_key, result)
+            return result
 
         except requests.RequestException as e:
             logger.error(f"Failed to fetch AQI for coordinates: {type(e).__name__}")
