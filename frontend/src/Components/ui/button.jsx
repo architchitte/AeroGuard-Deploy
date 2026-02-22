@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { cn } from '../../lib/utils';
 
 const buttonVariants = {
-  default: 'bg-teal-600 text-white hover:bg-teal-700',
+  default: 'bg-[#B51A2B] text-white hover:bg-[#B51A2B]/80 hover:text-white',
   outline: 'border border-slate-700 bg-slate-800 text-white hover:bg-slate-700',
   ghost: 'text-slate-300 hover:bg-slate-700/50',
 };

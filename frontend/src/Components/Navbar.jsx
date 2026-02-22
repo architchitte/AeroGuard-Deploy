@@ -1,108 +1,77 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Wind } from "lucide-react";
 
 export default function Navbar({ variant = "dashboard" }) {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const navigate = useNavigate();
 
-    /* ================= NAV ITEMS ================= */
-
-    const landingNavItems = [
-        { path: '#hero', icon: '✨', label: 'Overview' },
-        { path: '#heatmap', icon: '🗺️', label: 'Heatmap' },
-        { path: '/dashboard', icon: '🚀', label: 'Explore' },
+    const landingItems = [
+        { path: "#hero", label: "Overview" },
+        { path: "#heatmap", label: "Heatmap" },
+        { path: "/dashboard", label: "Explore" },
     ];
-
-    const dashboardNavItems = [
-        { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-        { path: '/health-risk', icon: '❤️', label: 'Health' },
-        { path: '/', icon: '🏠', label: 'Home' },
+    const dashboardItems = [
+        { path: "/dashboard", label: "Dashboard" },
+        { path: "/health-risk", label: "Health" },
+        { path: "/", label: "Home" },
     ];
+    const navItems = variant === "landing" ? landingItems : dashboardItems;
 
-    const navItems = variant === "landing" ? landingNavItems : dashboardNavItems;
-
-    /* ================= SCROLL / NAV ================= */
-
-    const scrollToSection = (path) => {
-        setIsMobileMenuOpen(false);
-
-        // Route navigation
-        if (path.startsWith("/")) {
-            navigate(path);
-            return;
-        }
-
-        const element = document.querySelector(path);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
+    const go = (path) => {
+        setMobileOpen(false);
+        if (path.startsWith("/")) { navigate(path); return; }
+        document.querySelector(path)?.scrollIntoView({ behavior: "smooth" });
     };
 
     return (
-        <header className="fixed top-0 left-0 w-full bg-void/80 backdrop-blur-md p-4 flex items-center justify-between border-b border-white/10 relative z-50">
+        <header className="fixed top-0 left-0 w-full bg-[#101525]/85 backdrop-blur-xl border-b border-[#384358]/20 z-50 px-5 sm:px-10 h-14 flex items-center justify-between">
 
-            {/* LOGO */}
-            <div
-                className="flex items-center gap-3 cursor-pointer"
-                onClick={() => scrollToSection(variant === "landing" ? '#hero' : '#dashboard')}
-            >
-                <span className="text-3xl">🌍</span>
+            {/* Logo */}
+            <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => go(variant === "landing" ? "#hero" : "/dashboard")}>
+                <div className="w-7 h-7 rounded-lg bg-[#B51A2B]/15 border border-[#384358]/40 flex items-center justify-center">
+                    <Wind size={14} className="text-[#B51A2B]" />
+                </div>
                 <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                        AeroGuard
-                    </h1>
-                    <p className="text-xs text-slate-400 hidden sm:block">
-                        AI-Powered Air Quality
+                    <h1 className="text-sm font-black text-[#FFA586] tracking-tight font-display text-interactive">AeroGuard</h1>
+                    <p className="text-[9px] text-[#D1A5A5] hidden sm:block font-bold tracking-wider uppercase flex items-center gap-1">
+                        <span className="cursive-accent normal-case tracking-normal text-[#B51A2B] text-sm">AI</span> Air Quality
                     </p>
                 </div>
             </div>
 
-            {/* DESKTOP NAV */}
-            <nav className="hidden md:flex items-center gap-1 bg-white/5 rounded-full px-2 py-1 backdrop-blur-md border border-white/10">
+            {/* Desktop nav */}
+            <nav className="hidden md:flex items-center gap-0.5 bg-[#242F49] rounded-full px-2 py-1 border border-[#384358]/20">
                 {navItems.map((item) => (
-                    <button
-                        key={item.label}
-                        onClick={() => scrollToSection(item.path)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105 text-slate-300 hover:text-white hover:bg-white/5"
-                    >
-                        <span>{item.icon}</span>
-                        <span className="text-sm font-medium">{item.label}</span>
+                    <button key={item.label} onClick={() => go(item.path)}
+                        className="px-4 py-1.5 rounded-full text-xs font-bold text-[#FFA586] hover:text-[#B51A2B] hover:bg-[#384358]/20 transition-all text-interactive">
+                        {item.label}
                     </button>
                 ))}
             </nav>
 
-            {/* MOBILE MENU BUTTON */}
-            <div className="md:hidden z-50">
-                <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="text-slate-300 hover:text-white focus:outline-none"
-                >
-                    {isMobileMenuOpen ? (
-                        <span className="text-2xl">✕</span>
-                    ) : (
-                        <span className="text-2xl">☰</span>
-                    )}
-                </button>
-            </div>
-
-            {/* RIGHT SIDE */}
-            <div className="hidden md:flex items-center gap-4">
-                <div className="bg-teal-500/10 border border-teal-500/20 rounded-lg px-3 py-1 text-center">
-                    <p className="text-xs text-teal-300 font-semibold">Stay Protected</p>
+            {/* Right side */}
+            <div className="hidden md:flex items-center gap-3">
+                <div className="bg-[#242F49] border border-[#384358]/30 rounded-lg px-3 py-1">
+                    <p className="text-[9px] text-[#B51A2B] font-black uppercase tracking-wider flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-[#B51A2B] animate-pulse" />
+                        Live <span className="cursive-accent normal-case tracking-normal text-[#FFA586] text-xs">Monitoring</span>
+                    </p>
                 </div>
             </div>
 
-            {/* MOBILE NAV OVERLAY */}
-            {isMobileMenuOpen && (
-                <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-lg z-40 flex flex-col items-center justify-center space-y-6 md:hidden">
+            {/* Mobile toggle */}
+            <button className="md:hidden text-[#FFA586] hover:text-[#B51A2B] text-lg" onClick={() => setMobileOpen(!mobileOpen)}>
+                {mobileOpen ? "✕" : "☰"}
+            </button>
+
+            {/* Mobile overlay */}
+            {mobileOpen && (
+                <div className="fixed inset-0 bg-[#101525]/97 backdrop-blur-xl z-40 flex flex-col items-center justify-center gap-4 md:hidden">
                     {navItems.map((item) => (
-                        <button
-                            key={item.label}
-                            onClick={() => scrollToSection(item.path)}
-                            className="flex items-center gap-3 px-6 py-3 rounded-full text-lg transition-all duration-300 text-slate-300 hover:text-white"
-                        >
-                            <span>{item.icon}</span>
-                            <span className="font-medium">{item.label}</span>
+                        <button key={item.label} onClick={() => go(item.path)}
+                            className="px-6 py-2.5 rounded-full text-base font-bold text-[#FFA586] hover:text-[#B51A2B] hover:bg-[#242F49] transition-all">
+                            {item.label}
                         </button>
                     ))}
                 </div>

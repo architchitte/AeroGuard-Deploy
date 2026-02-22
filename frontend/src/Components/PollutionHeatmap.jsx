@@ -45,12 +45,12 @@ function MapController({ center, zoom }) {
 /* ================= AQI HELPERS ================= */
 
 const getAQIColor = (aqi) => {
-  if (aqi <= 50) return "#14b8a6";
-  if (aqi <= 100) return "#facc15";
-  if (aqi <= 150) return "#f97316";
-  if (aqi <= 200) return "#ef4444";
-  if (aqi <= 300) return "#7f1d1d";
-  return "#450a0a";
+  if (aqi <= 50) return "#00e400"; // Good - Green
+  if (aqi <= 100) return "#ffff00"; // Moderate - Yellow
+  if (aqi <= 150) return "#ff7e00"; // Unhealthy for Sensitive Groups - Orange
+  if (aqi <= 200) return "#ff0000"; // Unhealthy - Red
+  if (aqi <= 300) return "#8f3f97"; // Very Unhealthy - Purple
+  return "#7e0023"; // Hazardous - Maroon
 };
 
 const getAQILabel = (aqi) => {
@@ -470,7 +470,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
   const healthAdvice = getHealthAdvice(aqi ?? 0);
 
   return (
-    <div className="relative w-full h-[850px] bg-[#020617] rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden group/map-section ring-1 ring-white/10">
+    <div className="relative w-full h-[850px] bg-[#101525] rounded-[3rem] border border-[#384358]/20 shadow-2xl overflow-hidden group/map-section ring-1 ring-[#384358]/10">
 
       {/* ================= MAP Container ================= */}
       <MapContainer
@@ -556,12 +556,12 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
               max: 400,        // Better center-weighted intensity
               minOpacity: 0.25,
               gradient: {
-                0.1: '#0ea5e9', // Deep Sky Blue (Low)
-                0.2: '#14b8a6', // Teal
-                0.4: '#facc15', // Yellow
-                0.6: '#f97316', // Orange
-                0.8: '#ef4444', // Red
-                1.0: '#7f1d1d'  // Dark Red
+                0.1: '#00e400', // Green
+                0.2: '#ffff00', // Yellow
+                0.4: '#ff7e00', // Orange
+                0.6: '#ff0000', // Red
+                0.8: '#8f3f97', // Purple
+                1.0: '#7e0023'  // Maroon
               }
             }}
           />
@@ -577,7 +577,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
 
       {/* 1. TOP-LEFT: SEARCH OVERLAY */}
       <div className="absolute top-8 left-8 z-[1000] w-[340px] animate-slide-right">
-        <div className="glass-panel p-1 rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 focus-within:border-teal-500/50 hover:border-white/20">
+        <div className="glass-panel p-1 rounded-2xl border border-[#384358]/30 shadow-2xl transition-all duration-300 focus-within:border-[#B51A2B]/50 hover:border-white/20">
           <LocationSearch onSelect={handleLocationSelect} />
         </div>
       </div>
@@ -585,14 +585,14 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
       {/* 2. CENTER-LEFT: DATA PANEL */}
       {location && (
         <div className={`absolute top-[160px] left-8 z-[900] transition-all duration-500 ease-in-out ${isPanelOpen ? 'translate-x-0 opacity-100' : '-translate-x-[110%] opacity-0'}`}>
-          <div className="w-[360px] glass-panel rounded-[2.5rem] border border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.5),0_0_20px_rgba(20,184,166,0.1)] overflow-hidden backdrop-blur-3xl bg-slate-950/90 p-8 space-y-8">
+          <div className="w-[360px] glass-panel rounded-[2.5rem] border border-[#384358]/30 shadow-[0_0_50px_rgba(16,21,37,0.5),0_0_20px_rgba(181,26,43,0.1)] overflow-hidden backdrop-blur-3xl bg-[#101525]/95 p-8 space-y-8">
             <div className="flex justify-between items-start">
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                  <MapPin size={10} className="text-teal-400" /> Current Station
+                <p className="text-[10px] font-black uppercase text-[#9BA3AF] tracking-widest flex items-center gap-2">
+                  <MapPin size={10} className="text-[#B51A2B]" /> Current Station
                 </p>
-                <h3 className="text-2xl font-black text-white leading-tight">{location.name}</h3>
-                <p className="text-slate-400 text-xs font-medium">Regional Air Intelligence</p>
+                <h3 className="text-2xl font-black text-[#FFA586] leading-tight">{location.name}</h3>
+                <p className="text-[#9BA3AF] text-xs font-medium uppercase tracking-wider">Regional Air Intelligence</p>
               </div>
               <button
                 onClick={() => setIsPanelOpen(false)}
@@ -603,12 +603,12 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
               </button>
             </div>
 
-            <div className="flex items-center justify-between gap-6 py-6 border-y border-white/5">
+            <div className="flex items-center justify-between gap-6 py-6 border-y border-[#384358]/15">
               <div className="space-y-1">
-                <span className="text-7xl font-black text-white leading-none tracking-tighter">
+                <span className="text-7xl font-black text-[#FFA586] leading-none tracking-tighter">
                   {aqi ?? '--'}
                 </span>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">US-EPA Index</p>
+                <p className="text-xs font-bold text-[#9BA3AF] uppercase tracking-widest">US-EPA Index</p>
               </div>
               <div className="flex flex-col gap-2 flex-1">
                 <div
@@ -621,7 +621,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
                 >
                   {getAQILabel(aqi ?? 0)}
                 </div>
-                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-[#101525]/80 h-1.5 rounded-full overflow-hidden">
                   <div
                     className="h-full transition-all duration-1000"
                     style={{
@@ -634,18 +634,18 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
             </div>
 
 
-            <div className="p-5 rounded-3xl bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent border border-teal-500/20">
+            <div className="p-5 rounded-3xl bg-gradient-to-br from-[#B51A2B]/10 via-[#541A2B]/5 to-transparent border border-[#B51A2B]/20">
               <div className="flex items-center gap-2 mb-2">
-                <Activity size={12} className="text-teal-400 animate-pulse" />
-                <span className="text-[10px] font-black uppercase text-teal-400 tracking-widest">AI Health Pulse</span>
+                <Activity size={12} className="text-[#B51A2B] animate-pulse" />
+                <span className="text-[10px] font-black uppercase text-[#B51A2B] tracking-widest">AI Health Pulse</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed italic mb-4">
+              <p className="text-xs text-[#FFA586] leading-relaxed italic mb-4">
                 "{healthAdvice}"
               </p>
 
               <button
                 onClick={() => navigate('/dashboard', { state: { selectedLocation: location } })}
-                className="w-full py-3 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 rounded-2xl text-teal-400 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 bg-[#B51A2B]/10 hover:bg-[#B51A2B]/20 border border-[#B51A2B]/30 rounded-2xl text-[#B51A2B] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2"
               >
                 Get Detailed Analysis
                 <ChevronRight size={12} />
@@ -658,7 +658,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
       {location && !isPanelOpen && (
         <button
           onClick={() => setIsPanelOpen(true)}
-          className="absolute top-24 left-8 z-[1000] p-4 bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-2xl text-teal-400 hover:scale-110 transition-all animate-slide-right shadow-2xl hover:border-teal-500/50"
+          className="absolute top-24 left-8 z-[1000] p-4 bg-[#101525]/90 backdrop-blur-xl border border-[#384358]/30 rounded-2xl text-[#B51A2B] hover:scale-110 transition-all animate-slide-right shadow-2xl hover:border-[#B51A2B]/50"
         >
           <ChevronRight size={20} />
         </button>
@@ -666,11 +666,11 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
 
       {/* 3. BOTTOM-LEFT: STATUS */}
       <div className="absolute bottom-8 left-8 z-[400]">
-        <div className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-2xl group/status hover:border-teal-500/30 transition-all">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-          <span className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">AeroGrid Live</span>
-          <div className="w-[1px] h-3 bg-white/10 mx-1" />
-          <span className="text-[10px] font-bold text-slate-500 uppercase group-hover:text-teal-400 transition-colors">
+        <div className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-[#101525]/90 backdrop-blur-xl border border-[#384358]/20 shadow-2xl group/status hover:border-[#B51A2B]/30 transition-all">
+          <div className="w-2 h-2 rounded-full bg-[#B51A2B] animate-pulse shadow-[0_0_8px_rgba(181,26,43,0.5)]" />
+          <span className="text-[10px] font-bold text-[#FFA586] uppercase tracking-[0.2em]">AeroGrid Live</span>
+          <div className="w-[1px] h-3 bg-[#384358]/30 mx-1" />
+          <span className="text-[10px] font-bold text-[#9BA3AF] uppercase group-hover:text-[#B51A2B] transition-colors">
             Last Sync: {lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
@@ -687,7 +687,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
             <button
               key={btn.id}
               onClick={() => handleZoomPreset(btn.id)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-[#9BA3AF] hover:text-[#FFA586] hover:bg-[#B51A2B]/10 transition-all active:scale-95"
             >
               <btn.icon size={16} />
               <span className="text-[10px] font-bold uppercase tracking-widest">{btn.label}</span>
@@ -695,17 +695,17 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
           ))}
         </div>
 
-        <div className="glass-panel p-6 rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-2xl w-64 space-y-4 ring-1 ring-white/5">
+        <div className="glass-panel p-6 rounded-[2rem] border border-[#384358]/20 backdrop-blur-3xl shadow-2xl w-64 space-y-4 ring-1 ring-[#384358]/10">
           <div className="flex justify-between items-center">
-            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Air Spectrum</p>
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <p className="text-[10px] font-black uppercase text-[#9BA3AF] tracking-widest">Air Spectrum</p>
+            <div className="w-1.5 h-1.5 rounded-full bg-[#B51A2B] animate-pulse" />
           </div>
-          <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-white/5 ring-1 ring-white/10">
-            {['#14b8a6', '#facc15', '#f97316', '#ef4444', '#7f1d1d'].map((c, i) => (
+          <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-[#101525]/60 ring-1 ring-[#384358]/10">
+            {['#00e400', '#ffff00', '#ff7e00', '#ff0000', '#8f3f97', '#7e0023'].map((c, i) => (
               <div key={i} className="flex-1 h-full" style={{ backgroundColor: c }} />
             ))}
           </div>
-          <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase tracking-[0.15em]">
+          <div className="flex justify-between text-[9px] text-[#9BA3AF] font-bold uppercase tracking-[0.15em]">
             <span>Good</span>
             <span>Poor</span>
             <span>Severe</span>
@@ -714,19 +714,19 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
       </div>
 
       {loadingStations && (
-        <div className="absolute inset-0 z-[2000] bg-slate-950/60 backdrop-blur-xl flex items-center justify-center">
+        <div className="absolute inset-0 z-[2000] bg-[#101525]/70 backdrop-blur-xl flex items-center justify-center">
           <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-500">
             <div className="relative">
-              <div className="w-24 h-24 border-2 border-teal-500/10 border-t-teal-500 rounded-full animate-spin" />
+              <div className="w-24 h-24 border-2 border-[#B51A2B]/10 border-t-[#B51A2B] rounded-full animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Globe className="text-teal-500 w-8 h-8 animate-pulse" />
+                <Globe className="text-[#B51A2B] w-8 h-8 animate-pulse" />
               </div>
             </div>
             <div className="text-center space-y-2">
-              <span className="text-white text-lg font-black tracking-[0.4em] uppercase block">AeroGrid Sync</span>
+              <span className="text-[#FFA586] text-lg font-black tracking-[0.4em] uppercase block">AeroGrid Sync</span>
               <div className="flex items-center gap-2 justify-center">
-                <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse" />
-                <span className="text-teal-400 text-[10px] font-black uppercase tracking-widest">Global Station Scan active</span>
+                <span className="w-1.5 h-1.5 bg-[#B51A2B] rounded-full animate-pulse" />
+                <span className="text-[#B51A2B] text-[10px] font-black uppercase tracking-widest">Global Station Scan active</span>
               </div>
             </div>
           </div>

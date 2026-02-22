@@ -47,8 +47,7 @@ This project demonstrates **real-world system design**, **API integration**, **d
 - **📍 Hyper-Local Sensor Integration**: Supporting low-cost IoT sensor networks for street-level granularity beyond official stations.
 - **📅 Historical Deep-Dives**: Long-term data storage to analyze seasonal pollution trends and policy impact.
 - **📱 Native Mobile Ecosystem**: Cross-platform mobile apps with push-notifications for high-pollution alerts.
-- **🌦️ Meteorlogical Correlation**: Integrating weather patterns (wind speed, humidity) to improve forecasting accuracy.
-- **🩺 Health Integration**: Connecting with health wearables to provide proactive advice based on real-time exposure.
+- **🌦️ Meteorological Correlation**: Integrating weather patterns (wind speed, humidity) to improve forecasting accuracy.- **🩺 Health Integration**: Connecting with health wearables to provide proactive advice based on real-time exposure.
 
 ---
 

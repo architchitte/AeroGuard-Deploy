@@ -1,84 +1,78 @@
-import { useState } from "react";
-import { MapPin, Search } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { MapPin, Search, Loader2 } from "lucide-react";
 
 export default function LocationSearch({ onSelect }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const ref = useRef(null);
 
   const searchLocation = async (text) => {
     setQuery(text);
-
-    // If input too small → reset
-    if (text.length < 3) {
-      setResults([]);
-      return;
-    }
-
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
+    if (text.length < 3) { setResults([]); return; }
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/realtime-aqi/search?q=${encodeURIComponent(text)}`
-      );
+      const res = await fetch(`${API_BASE}/api/v1/realtime-aqi/search?q=${encodeURIComponent(text)}`);
       const data = await res.json();
-
-      setResults(
-        data.map((item) => ({
-          displayName: item.display_name,
-          name: item.display_name.split(',')[0], // Extract city name
-          lat: parseFloat(item.lat),
-          lon: parseFloat(item.lon),
-        }))
-      );
-    } catch (err) {
-      console.error("Location search failed", err);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
+      setResults(data.map((it) => ({
+        displayName: it.display_name,
+        name: it.display_name.split(",")[0],
+        lat: parseFloat(it.lat),
+        lon: parseFloat(it.lon),
+      })));
+    } catch { setResults([]); }
+    finally { setLoading(false); }
   };
 
-  return (
-    <div className="bg-slate-800 rounded-2xl p-5 border border-slate-700">
-      <div className="flex items-center gap-2 mb-3">
-        <MapPin className="text-teal-400" size={18} />
-        <h3 className="text-white font-semibold">Search Location</h3>
-      </div>
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setFocused(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-      {/* INPUT */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+  return (
+    <div ref={ref} className="relative w-full">
+      {/* Input */}
+      <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all duration-200
+        ${focused ? "bg-[#242F49] border-[#384358]/60 shadow-[0_0_20px_rgba(181,26,43,0.08)]"
+          : "bg-[#242F49]/70 border-[#384358]/25 hover:border-[#384358]/50"}`}>
+        {loading
+          ? <Loader2 size={14} className="text-[#B51A2B] animate-spin shrink-0" />
+          : <Search size={14} className={`${focused ? "text-[#B51A2B]" : "text-[#9BA3AF]"} shrink-0 transition-colors`} />}
         <input
           value={query}
+          onFocus={() => setFocused(true)}
           onChange={(e) => searchLocation(e.target.value)}
-          placeholder="Search city, area, place..."
-          className="w-full pl-9 pr-3 py-2 bg-black/30 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-teal-400"
+          placeholder="Search any city or region…"
+          className="bg-transparent border-none outline-none w-full text-xs font-bold text-[#FFA586] placeholder:text-[#9BA3AF]/60 placeholder:font-medium"
         />
       </div>
 
-      {/* LOADING */}
-      {loading && (
-        <p className="text-xs text-slate-400 mt-2">Searching…</p>
-      )}
-
-      {/* RESULTS */}
-      {!loading && results.length > 0 && (
-        <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
-          {results.map((loc, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                onSelect(loc);
-                setQuery("");     // ✅ allows fresh search
-                setResults([]);   // ✅ hide dropdown
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg bg-black/30 hover:bg-white/5 text-slate-300 text-xs transition"
-            >
-              {loc.displayName}
-            </button>
-          ))}
+      {/* Dropdown */}
+      {focused && results.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 p-2 glass-card rounded-2xl border-[#384358]/30 shadow-2xl z-[200]">
+          <div className="px-2 py-1.5 border-b border-[#384358]/15 mb-1">
+            <span className="text-[9px] font-black uppercase tracking-widest text-[#9BA3AF]">Search Results</span>
+          </div>
+          <div className="space-y-0.5 max-h-52 overflow-y-auto">
+            {results.map((loc, i) => (
+              <button key={i}
+                onClick={() => { onSelect(loc); setQuery(""); setResults([]); setFocused(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#242F49] transition-all group">
+                <div className="p-1.5 rounded-lg bg-[#101525]/60 group-hover:bg-[#B51A2B]/10 transition-colors">
+                  <MapPin size={12} className="text-[#9BA3AF] group-hover:text-[#B51A2B]" />
+                </div>
+                <div className="flex flex-col items-start overflow-hidden text-left">
+                  <span className="text-xs font-bold text-[#FFA586] group-hover:text-[#B51A2B] transition-colors truncate w-full">
+                    {loc.name}
+                  </span>
+                  <span className="text-[10px] text-[#9BA3AF] truncate w-full">{loc.displayName}</span>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
