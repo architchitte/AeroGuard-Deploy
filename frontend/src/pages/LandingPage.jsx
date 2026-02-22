@@ -402,25 +402,6 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ══ CTA BANNER ══ */}
-            <section className="py-20 px-6 border-t border-[#384358]/10 relative overflow-hidden">
-                <motion.div className="absolute inset-0 pointer-events-none"
-                    style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(181,26,43,0.08), transparent)" }} />
-                <Reveal className="relative z-10 text-center space-y-6 max-w-3xl mx-auto">
-                    <div className="text-5xl">🌬️</div>
-                    <h2 className="text-4xl md:text-5xl font-black text-[#FFA586] tracking-tight">Ready to breathe smarter?</h2>
-                    <p className="text-[#9BA3AF] text-sm max-w-lg mx-auto leading-relaxed">
-                        Search any Indian city and unlock your 6-hour AI forecast, live heatmap, and personalised health assessment — in seconds.
-                    </p>
-                    <motion.button onClick={() => navigate("/dashboard")}
-                        whileHover={{ scale: 1.05, boxShadow: "0 24px 70px rgba(181,26,43,0.45)" }}
-                        whileTap={{ scale: 0.97 }}
-                        className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-[#B51A2B] text-[#101525] font-black text-base shadow-xl shadow-[#B51A2B]/30">
-                        🚀 Launch Dashboard <ArrowRight size={18} />
-                    </motion.button>
-                </Reveal>
-            </section>
-
             {/* ══ FOOTER ══ */}
             <footer className="py-8 px-8 border-t border-[#384358]/15 flex flex-wrap justify-between items-center gap-4 bg-[#101525]/80">
                 <div className="flex items-center gap-2">

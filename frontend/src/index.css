@@ -112,20 +112,19 @@ h6 {
   color: #FFA586;
 }
 
-/* ——— Leaflet Tooltip ——— */
-.leaflet-tooltip.aqi-tooltip {
-  background: rgba(36, 47, 73, 0.98);
-  border-radius: 10px;
-  padding: 8px 12px;
-  border: 1px solid rgba(181, 26, 43, 0.3);
-  box-shadow: 0 8px 24px rgba(16, 21, 37, 0.4);
-  color: #FFA586;
+/* ——— Leaflet Tooltip Reset ——— */
+.leaflet-tooltip.custom-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
-.leaflet-tooltip.aqi-tooltip .tooltip-title {
-  font-weight: 700;
-  color: #FFA586;
-  margin-bottom: 2px;
+.leaflet-tooltip-top.custom-tooltip:before,
+.leaflet-tooltip-bottom.custom-tooltip:before,
+.leaflet-tooltip-left.custom-tooltip:before,
+.leaflet-tooltip-right.custom-tooltip:before {
+  display: none !important;
 }
 
 /* ——— Scrollbar ——— */
