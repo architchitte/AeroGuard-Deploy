@@ -98,6 +98,54 @@ class RealtimeAQIService:
         if not self.api_key:
             return []
 
+        # If box is very large (e.g. whole of India), WAQI API returns very few stations.
+        # We use a grid fetch to increase density.
+        lat_span = lat_max - lat_min
+        lon_span = lon_max - lon_min
+        is_large_box = lat_span > 15 or lon_span > 15
+
+        try:
+            if is_large_box:
+                logger.info(f"Large bounding box detected ({lat_span:.1f}x{lon_span:.1f}). Using 10x10 grid fetch.")
+                
+                lat_steps = 10
+                lon_steps = 10
+                lat_inc = lat_span / lat_steps
+                lon_inc = lon_span / lon_steps
+                
+                all_stations = []
+                for i in range(lat_steps):
+                    for j in range(lon_steps):
+                        q_lat_min = lat_min + i * lat_inc
+                        q_lat_max = q_lat_min + lat_inc
+                        q_lon_min = lon_min + j * lon_inc
+                        q_lon_max = q_lon_min + lon_inc
+                        
+                        q_data = self._fetch_bounds_once(q_lat_min, q_lon_min, q_lat_max, q_lon_max)
+                        all_stations.extend(q_data)
+                
+                # De-duplicate by UID
+                seen_uids = set()
+                result = []
+                for s in all_stations:
+                    uid = s.get("uid")
+                    if uid and uid not in seen_uids:
+                        seen_uids.add(uid)
+                        result.append(s)
+                
+                logger.info(f"Grid fetch completed. Found {len(result)} unique stations.")
+            else:
+                result = self._fetch_bounds_once(lat_min, lon_min, lat_max, lon_max)
+
+            self._set_to_cache(cache_key, result)
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to fetch map bounds data: {str(e)}")
+            return []
+
+    def _fetch_bounds_once(self, lat_min: float, lon_min: float, lat_max: float, lon_max: float) -> List[Dict[str, Any]]:
+        """Single API call for bounding box."""
         try:
             url = f"{self.base_url}/map/bounds/"
             params = {
@@ -112,22 +160,58 @@ class RealtimeAQIService:
                 return []
 
             stations = data.get('data', [])
-            result = [
-                {
-                    "lat": s.get("lat"),
-                    "lon": s.get("lon"),
-                    "aqi": s.get("aqi"),
-                    "station": s.get("station", {}).get("name", "Unknown Station"),
-                    "uid": s.get("uid")
-                }
-                for s in stations if s.get("aqi") != "-"
-            ]
-            self._set_to_cache(cache_key, result)
+            result = []
+            for s in stations:
+                aqi_val = s.get("aqi")
+                if aqi_val == "-" or aqi_val is None:
+                    continue
+                try:
+                    result.append({
+                        "lat": float(s.get("lat")),
+                        "lon": float(s.get("lon")),
+                        "aqi": int(aqi_val),
+                        "station": s.get("station", {}).get("name", "Unknown Station"),
+                        "uid": s.get("uid")
+                    })
+                except (ValueError, TypeError):
+                    continue
             return result
-
         except Exception as e:
-            logger.error(f"Failed to fetch map bounds data: {str(e)}")
+            logger.error(f"Error in _fetch_bounds_once: {str(e)}")
             return []
+
+    def get_supplemented_nationwide_data(self) -> List[Dict[str, Any]]:
+        """
+        Fetch nationwide data and supplement with major city data.
+        """
+        # India Bounding Box (approximate)
+        lat_min, lon_min, lat_max, lon_max = 6.5, 68.7, 37.1, 97.25
+        grid_stations = self.get_map_bounds_data(lat_min, lon_min, lat_max, lon_max)
+        
+        seen_uids = set(s.get("uid") for s in grid_stations if s.get("uid"))
+        result = list(grid_stations)
+        
+        logger.info(f"Supplementing {len(grid_stations)} stations with popular cities...")
+        
+        for city in POPULAR_INDIAN_CITIES:
+            try:
+                data = self.get_city_aqi(city)
+                if data and data.get('aqi') is not None:
+                    uid = data.get('uid') or f"city-{city.lower()}"
+                    if uid not in seen_uids:
+                        seen_uids.add(uid)
+                        result.append({
+                            "lat": data.get("latitude"),
+                            "lon": data.get("longitude"),
+                            "aqi": data.get("aqi"),
+                            "station": data.get("city", city),
+                            "uid": uid
+                        })
+            except Exception as e:
+                logger.warning(f"Supplementation failed for {city}: {e}")
+                
+        logger.info(f"Final supplemented count: {len(result)} stations.")
+        return result
 
     def get_city_by_coordinates(
         self, latitude: float, longitude: float
@@ -266,21 +350,15 @@ class RealtimeAQIService:
 
 
 
-# Popular Indian cities for quick access
+# Popular Indian cities for comprehensive nationwide coverage
 POPULAR_INDIAN_CITIES = [
-    "Delhi",
-    "Mumbai",
-    "Bangalore",
-    "Hyderabad",
-    "Chennai",
-    "Kolkata",
-    "Pune",
-    "Ahmedabad",
-    "Jaipur",
-    "Lucknow",
-    "Chandigarh",
-    "Indore",
-    "Surat",
-    "Visakhapatnam",
-    "Nagpur",
+    "Delhi", "Mumbai", "Bangalore", "Hyderabad", "Chennai", 
+    "Kolkata", "Pune", "Ahmedabad", "Jaipur", "Lucknow", 
+    "Chandigarh", "Indore", "Surat", "Visakhapatnam", "Nagpur",
+    "Patna", "Bhopal", "Ludhiana", "Agra", "Nashik",
+    "Vadodara", "Faridabad", "Thane", "Meerut", "Rajkot",
+    "Varanasi", "Srinagar", "Aurangabad", "Dhanbad", "Amritsar",
+    "Ranchi", "Howrah", "Coimbatore", "Jabalpur", "Gwalior",
+    "Vijayawada", "Madurai", "Guwahati", "Shimla", "Dehradun",
+    "Panaji", "Shillong", "Raipur", "Bhubaneswar", "Kanpur"
 ]

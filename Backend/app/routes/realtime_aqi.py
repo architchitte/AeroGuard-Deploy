@@ -280,16 +280,29 @@ def health_check():
         "timestamp": datetime.now().isoformat(),
     }), 200
 
+@bp.route("/token", methods=["GET"])
+def get_waqi_token():
+    """
+    Get the WAQI API token for frontend map tiles.
+    """
+    if aqi_service.api_key:
+        return jsonify({
+            "status": "success",
+            "token": aqi_service.api_key
+        }), 200
+    else:
+        return jsonify({
+            "status": "error",
+            "message": "WAQI API key not configured"
+        }), 500
+
 @bp.route("/nationwide", methods=["GET"])
 def get_nationwide_aqi():
     """
-    Get nationwide AQI points for heatmap visualization using map bounds.
+    Get nationwide AQI points for heatmap visualization with supplementation for major cities.
     """
     try:
-        # India Bounding Box (approximate)
-        # Lat: 6.5 to 37.1
-        # Lon: 68.7 to 97.25
-        points = aqi_service.get_map_bounds_data(6.5, 68.7, 37.1, 97.25)
+        points = aqi_service.get_supplemented_nationwide_data()
 
         return jsonify({
             "status": "success",

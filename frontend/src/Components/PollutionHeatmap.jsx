@@ -5,8 +5,38 @@ import {
   Circle,
   CircleMarker,
   Tooltip,
-  useMap
+  useMap,
+  Polyline
 } from "react-leaflet";
+
+// Custom grid lines component to match user's reference image
+function GridLines() {
+  const lines = [];
+  // Latitudes
+  for (let lat = -90; lat <= 90; lat += 10) {
+    lines.push([[lat, -180], [lat, 180]]);
+  }
+  // Longitudes
+  for (let lon = -180; lon <= 180; lon += 10) {
+    lines.push([[-90, lon], [90, lon]]);
+  }
+
+  return (
+    <>
+      {lines.map((pos, i) => (
+        <Polyline
+          key={i}
+          positions={pos}
+          pathOptions={{
+            color: 'rgba(255, 255, 255, 0.1)',
+            weight: 1,
+            interactive: false
+          }}
+        />
+      ))}
+    </>
+  );
+}
 import { useNavigate } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 import {
@@ -25,7 +55,7 @@ import {
 } from "lucide-react";
 
 import LocationSearch from "../Components/LocationSelector";
-import { fetchAQI, fetchMapData } from "../api/aqi";
+import { fetchAQI, fetchMapData, fetchToken } from "../api/aqi";
 import DISTRICTS from "../constants/districts";
 import HeatmapLayer from "./HeatmapLayer";
 
@@ -73,10 +103,10 @@ const getHealthAdvice = (aqi) => {
 /* ================= MAIN ================= */
 
 export default function PollutionHeatmap({ externalLocation, onLocationSelect }) {
-  const INDIA_CENTER = [22.3511, 78.6677];
+  const INDIA_CENTER = [20.59, 78.96]; // Geographic Center of India
   const INDIA_BOUNDS = [
-    [6.46, 68.03],  // Southwest
-    [35.51, 97.41]  // Northeast
+    [5.0, 65.0],  // Southwest (Aggressive wrap)
+    [38.5, 100.0]  // Northeast (Aggressive wrap)
   ];
   const navigate = useNavigate();
 
@@ -89,6 +119,8 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
   const [aqi, setAqi] = useState(null);
   const [stations, setStations] = useState([]);
   const [loadingStations, setLoadingStations] = useState(false);
+
+  const [waqiToken, setWaqiToken] = useState(null);
 
   // Sync with external location if provided
   useEffect(() => {
@@ -113,8 +145,18 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
     }
   };
 
+  const loadToken = async () => {
+    try {
+      const token = await fetchToken();
+      setWaqiToken(token);
+    } catch (err) {
+      console.error("Token fetch failed:", err);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadToken();
     const interval = setInterval(loadData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -219,6 +261,18 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
           attribution='&copy; CARTO'
         />
 
+        <GridLines />
+
+        {/* WAQI Official Tiles disabled for vibrant custom look */}
+        {/* {waqiToken && (
+          <TileLayer
+            url={`https://tiles.waqi.info/tiles/heatmap/{z}/{x}/{y}.png?token=${waqiToken}`}
+            attribution='&copy; World Air Quality Index Project'
+            opacity={0.8}
+            zIndex={10}
+          />
+        )} */}
+
         <MapController center={center} zoom={zoom} />
 
         {/* ================= SELECTION AURA EFFECT ================= */}
@@ -280,20 +334,22 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
           </>
         )}
 
-        {/* GRADIENT HEATMAP LAYER */}
+        {/* VIBRANT CUSTOM HEATMAP LAYER - Matching reference image */}
         {heatmapPoints.length > 0 && (
           <HeatmapLayer
             points={heatmapPoints}
             options={{
-              radius: 40,      // Balanced for density
-              blur: 30,        // Balanced for density
-              max: 400,        // Standard EPA scale peak
-              minOpacity: 0.3,
+              radius: 75,      // Even larger blobs for fuller coverage
+              blur: 55,        // Extra soft flow
+              max: 200,        // Lower max to make moderate AQI look more intense (red/orange)
+              minOpacity: 0.45, // More solid look
               gradient: {
-                0.1: '#00e400', // Green
-                0.3: '#ffff00', // Yellow
-                0.5: '#ff7e00', // Orange
-                0.8: '#ff0000', // Red
+                0.1: '#3fb5af', // Teal-ish edge
+                0.3: '#00e400', // Green
+                0.5: '#ffff00', // Yellow
+                0.7: '#ff7e00', // Orange
+                0.9: '#ff0000', // Red
+                1.0: '#7e0023'  // Maroon center
               }
             }}
           />

@@ -15,16 +15,22 @@ function HeatmapLayer({ points, options = {} }) {
   useEffect(() => {
     if (!points || points.length === 0) return;
 
+    // Verify L.heatLayer exists (plugin loading check)
+    if (typeof L.heatLayer !== 'function') {
+      console.warn('L.heatLayer is not available. Ensure leaflet.heat is loaded.');
+      return;
+    }
+
     // Convert points to leaflet.heat format: [lat, lng, intensity]
     const heatPoints = points.map(point => {
-      const lat = typeof options.latitudeExtractor === 'function' 
-        ? options.latitudeExtractor(point) 
+      const lat = typeof options.latitudeExtractor === 'function'
+        ? options.latitudeExtractor(point)
         : point.lat;
-      const lng = typeof options.longitudeExtractor === 'function' 
-        ? options.longitudeExtractor(point) 
+      const lng = typeof options.longitudeExtractor === 'function'
+        ? options.longitudeExtractor(point)
         : point.lng || point.lon;
-      const intensity = typeof options.intensityExtractor === 'function' 
-        ? options.intensityExtractor(point) 
+      const intensity = typeof options.intensityExtractor === 'function'
+        ? options.intensityExtractor(point)
         : point.value || point.intensity || 1;
 
       return [lat, lng, intensity];
@@ -46,9 +52,16 @@ function HeatmapLayer({ points, options = {} }) {
       }
     }).addTo(map);
 
+    // Patch for the willReadFrequently warning if possible
+    // Note: leaflet.heat creates a private canvas, so direct patching is difficult.
+    // However, we can hint to the browser by creating a dummy canvas if needed, 
+    // but the best fix is in the library itself. We'll stick to the safety check.
+
     // Cleanup on unmount or when points change
     return () => {
-      map.removeLayer(heatLayer);
+      if (map && heatLayer) {
+        map.removeLayer(heatLayer);
+      }
     };
   }, [map, points, options]);
 

@@ -41,4 +41,11 @@ const fetchMapData = async () => {
   }));
 };
 
-export { fetchAQI, fetchMapData };
+const fetchToken = async () => {
+  const res = await fetch(`${API_BASE_URL}/api/v1/realtime-aqi/token`);
+  if (!res.ok) throw new Error("Failed to fetch token");
+  const json = await res.json();
+  return json.token;
+};
+
+export { fetchAQI, fetchMapData, fetchToken };
