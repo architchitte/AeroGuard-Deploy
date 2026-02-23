@@ -78,7 +78,7 @@ export default function AdvancedAnalytics({ location, persona }) {
     <div className="w-full space-y-5">
 
       {/* ── Controls ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap">
         {/* Chart Toggle */}
         <div className="flex p-0.5 bg-[#101525]/70 rounded-xl border border-[#384358]/20">
           {[{ k: "trend", label: "📈 Trend" }, { k: "xai", label: "🧠 XAI" }].map(opt => (

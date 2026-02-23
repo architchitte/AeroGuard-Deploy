@@ -280,21 +280,34 @@ def health_check():
         "timestamp": datetime.now().isoformat(),
     }), 200
 
-@bp.route("/token", methods=["GET"])
-def get_waqi_token():
+@bp.route("/tiles/<int:z>/<int:x>/<int:y>.png", methods=["GET"])
+def proxy_waqi_tiles(z, x, y):
     """
-    Get the WAQI API token for frontend map tiles.
+    Backend proxy for WAQI tiles to avoid exposing API key to the frontend.
+    Includes basic caching and attribution requirements.
     """
-    if aqi_service.api_key:
-        return jsonify({
-            "status": "success",
-            "token": aqi_service.api_key
-        }), 200
-    else:
-        return jsonify({
-            "status": "error",
-            "message": "WAQI API key not configured"
-        }), 500
+    if not aqi_service.api_key:
+        return jsonify({"status": "error", "message": "WAQI API key not configured"}), 500
+
+    import requests
+    from flask import Response
+    
+    try:
+        url = f"https://tiles.waqi.info/tiles/heatmap/{z}/{x}/{y}.png?token={aqi_service.api_key}"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            # Forward the image with appropriate headers
+            res = Response(response.content, mimetype='image/png')
+            res.headers['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour
+            res.headers['X-Attribution'] = 'World Air Quality Index Project'
+            return res
+        else:
+            return jsonify({"status": "error", "message": "Failed to fetch tile"}), response.status_code
+            
+    except Exception as e:
+        logger.error(f"Tile proxy error: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @bp.route("/nationwide", methods=["GET"])
 def get_nationwide_aqi():

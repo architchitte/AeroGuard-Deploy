@@ -55,7 +55,7 @@ import {
 } from "lucide-react";
 
 import LocationSearch from "../Components/LocationSelector";
-import { fetchAQI, fetchMapData, fetchToken } from "../api/aqi";
+import { fetchAQI, fetchMapData } from "../api/aqi";
 import DISTRICTS from "../constants/districts";
 import HeatmapLayer from "./HeatmapLayer";
 
@@ -145,18 +145,9 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
     }
   };
 
-  const loadToken = async () => {
-    try {
-      const token = await fetchToken();
-      setWaqiToken(token);
-    } catch (err) {
-      console.error("Token fetch failed:", err);
-    }
-  };
 
   useEffect(() => {
     loadData();
-    loadToken();
     const interval = setInterval(loadData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -263,15 +254,13 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
 
         <GridLines />
 
-        {/* WAQI Official Tiles disabled for vibrant custom look */}
-        {/* {waqiToken && (
-          <TileLayer
-            url={`https://tiles.waqi.info/tiles/heatmap/{z}/{x}/{y}.png?token=${waqiToken}`}
-            attribution='&copy; World Air Quality Index Project'
-            opacity={0.8}
-            zIndex={10}
-          />
-        )} */}
+        {/* WAQI Official Tiles - Using Backend Proxy for security */}
+        <TileLayer
+          url={`${import.meta.env.VITE_API_BASE_URL}/api/v1/realtime-aqi/tiles/{z}/{x}/{y}.png`}
+          attribution='&copy; World Air Quality Index Project'
+          opacity={0.8}
+          zIndex={10}
+        />
 
         <MapController center={center} zoom={zoom} />
 
@@ -339,17 +328,17 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
           <HeatmapLayer
             points={heatmapPoints}
             options={{
-              radius: 75,      // Even larger blobs for fuller coverage
-              blur: 55,        // Extra soft flow
-              max: 200,        // Lower max to make moderate AQI look more intense (red/orange)
-              minOpacity: 0.45, // More solid look
+              radius: 45,      // Reduced for more pinpoint, "shabby-free" look
+              blur: 35,        // Reduced for better definition
+              max: 220,        // Slightly higher max to normalize intense colors
+              minOpacity: 0.5, // Stronger base visibility
               gradient: {
-                0.1: '#3fb5af', // Teal-ish edge
-                0.3: '#00e400', // Green
-                0.5: '#ffff00', // Yellow
-                0.7: '#ff7e00', // Orange
-                0.9: '#ff0000', // Red
-                1.0: '#7e0023'  // Maroon center
+                0.1: '#3fb5af',
+                0.3: '#00e400',
+                0.5: '#ffff00',
+                0.7: '#ff7e00',
+                0.9: '#ff0000',
+                1.0: '#7e0023'
               }
             }}
           />

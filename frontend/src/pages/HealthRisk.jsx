@@ -95,6 +95,23 @@ export function HealthRisk() {
 
   return (
     <div className="min-h-screen bg-[#101525] relative overflow-hidden font-sans">
+      {/* ══ NAV ══ */}
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl h-16 rounded-2xl bg-[#101525]/80 backdrop-blur-2xl border border-[#384358]/20 flex items-center justify-between px-8 shadow-2xl transition-all duration-300 pointer-events-auto">
+        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate("/")}>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg shadow-[#B51A2B]/20">
+            <span className="text-sm">🌍</span>
+          </div>
+          <span className="font-black text-lg text-[#FFA586] tracking-tighter">AeroGuard<span className="text-[#B51A2B] animate-pulse">.ai</span></span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate("/dashboard")}
+            className="px-6 py-2.5 rounded-xl bg-[#242F49] border border-[#384358]/40 text-[#FFA586] text-[10px] font-black uppercase tracking-widest hover:border-[#B51A2B]/50 transition-all flex items-center gap-2 active:scale-95">
+            <ArrowLeft size={12} /> Return Dashboard
+          </button>
+        </div>
+      </nav>
+
       {/* Decorative Background Elements */}
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#B51A2B]/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[20%] left-[-5%] w-[30%] h-[30%] bg-[#541A2B]/10 blur-[100px] rounded-full pointer-events-none" />

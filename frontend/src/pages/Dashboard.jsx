@@ -71,49 +71,76 @@ export default function Dashboard() {
   );
   const { forecast6h } = useForecast6h(selectedLocation);
 
-  /* ——— LANDING SCREEN ——— */
+  /* ——— LANDING SCREEN (SEARCH) ——— */
   if (!selectedLocation) return (
-    <div className="min-h-screen bg-[#101525] flex items-center justify-center px-4 relative overflow-hidden">
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#B51A2B]/10 blur-[140px] rounded-full animate-pulse" />
-      <div className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[55%] bg-[#541A2B]/8 blur-[160px] rounded-full animate-pulse" style={{ animationDelay: "1.5s" }} />
-      <div className="absolute inset-0 opacity-[0.035]"
-        style={{ backgroundImage: "radial-gradient(circle,#FFA586 1px,transparent 1px)", backgroundSize: "32px 32px" }} />
-
-      <div className="max-w-xl w-full text-center relative z-10 space-y-8">
-        <div className="space-y-4">
-          <div className="text-5xl animate-bounce">🌍</div>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#242F49] border border-[#384358]/40">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#B51A2B] shadow-[0_0_8px_#B51A2B] animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#B51A2B]">⚡ Atmospheric Intelligence Engine</span>
+    <div className="min-h-screen bg-[#101525] text-[#FFA586] overflow-x-hidden flex flex-col">
+      <header className="fixed top-5 inset-x-0 z-50 px-4 sm:px-8 pointer-events-none">
+        <div className="max-w-[1440px] mx-auto w-full h-16 bg-[#101525]/85 backdrop-blur-2xl border border-[#384358]/25 rounded-2xl flex items-center justify-between px-6 shadow-2xl pointer-events-auto transition-all">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg cursor-pointer" onClick={() => navigate("/")}>
+              <span className="text-xs">🌍</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[7px] uppercase font-black tracking-[0.2em] text-[#D1A5A5]">📍 System Status</span>
+              <span className="text-[11px] font-black text-[#FFA586] tracking-tight">Awaiting Node Selection...</span>
+            </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black text-[#FFA586] leading-[0.95] tracking-tighter font-display text-glow">
-            Know the Air&nbsp;<br />
-            <span className="text-gradient py-1 italic">
-              You Breathe. 💨
-            </span>
-          </h1>
-          <p className="text-sm text-[#FFA586] font-medium leading-relaxed">
-            🤖 AI-powered forecast · 📈 Real-time analytics · 🛡️ Personalized health advice
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 p-1 rounded-xl bg-[#242F49]/40 border border-[#384358]/20 pr-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#101525]/50 border border-[#384358]/20">
+                <div className="w-1 h-1 rounded-full bg-[#B51A2B] animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-wider text-[#B51A2B]">Live <span className="text-[#FFA586] cursive-accent normal-case tracking-normal">Monitoring</span></span>
+              </div>
+              <div className="h-4 w-[1px] bg-[#384358]/40 mx-0.5" />
+              <button
+                onClick={() => navigate("/")}
+                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#B51A2B]/20 transition-all text-[#FFA586]" title="Home">
+                <Home size={12} />
+              </button>
+            </div>
+          </div>
         </div>
+      </header>
 
-        <div className="glass-card p-2 rounded-2xl shadow-2xl border-[#384358]/30">
-          <LocationSearch onSelect={setSelectedLocation} />
-        </div>
+      <div className="flex-1 flex items-center justify-center px-4 relative overflow-hidden pt-20">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#B51A2B]/10 blur-[140px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[55%] bg-[#541A2B]/8 blur-[160px] rounded-full animate-pulse" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute inset-0 opacity-[0.035]"
+          style={{ backgroundImage: "radial-gradient(circle,#FFA586 1px,transparent 1px)", backgroundSize: "32px 32px" }} />
 
-        <div className="flex flex-wrap justify-center gap-2">
-          {[
-            { city: "Delhi", flag: "🏙️" },
-            { city: "Mumbai", flag: "🌊" },
-            { city: "Bangalore", flag: "🌿" },
-            { city: "Hyderabad", flag: "💎" },
-          ].map(({ city, flag }) => (
-            <button key={city}
-              onClick={() => setSelectedLocation({ name: city, lat: 28.61, lon: 77.20 })}
-              className="px-3 py-1.5 rounded-full border border-[#384358]/30 hover:border-[#B51A2B]/60 hover:bg-[#242F49] transition-all text-xs font-bold text-[#FFA586] hover:text-[#B51A2B] flex items-center gap-1.5">
-              <span>{flag}</span>{city}
-            </button>
-          ))}
+        <div className="max-w-xl w-full text-center relative z-10 space-y-8">
+          <div className="space-y-4">
+            <div className="text-5xl animate-bounce">🌍</div>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#242F49] border border-[#384358]/40">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#B51A2B] shadow-[0_0_8px_#B51A2B] animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#B51A2B]">⚡ Atmospheric Intelligence Engine</span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-black text-[#FFA586] leading-[0.95] tracking-tighter font-display text-glow">
+              Know the Air&nbsp;<br />
+              <span className="text-gradient py-1 italic">
+                You Breathe. 💨
+              </span>
+            </h1>
+          </div>
+
+          <div className="glass-card p-2 rounded-2xl shadow-2xl border-[#384358]/30">
+            <LocationSearch onSelect={setSelectedLocation} />
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              { city: "Delhi", flag: "🏙️" },
+              { city: "Mumbai", flag: "🌊" },
+              { city: "Bangalore", flag: "🌿" },
+              { city: "Hyderabad", flag: "💎" },
+            ].map(({ city, flag }) => (
+              <button key={city}
+                onClick={() => setSelectedLocation({ name: city, lat: 28.61, lon: 77.20 })}
+                className="px-3 py-1.5 rounded-full border border-[#384358]/30 hover:border-[#B51A2B]/60 hover:bg-[#242F49] transition-all text-xs font-bold text-[#FFA586] hover:text-[#B51A2B] flex items-center gap-1.5">
+                <span>{flag}</span>{city}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -163,88 +190,77 @@ export default function Dashboard() {
       </div>
 
       {/* ══ HEADER ══ */}
-      <header className="fixed top-0 inset-x-0 h-14 bg-[#101525]/90 backdrop-blur-2xl border-b border-[#384358]/20 z-50 px-5 sm:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">🌍</span>
-          <div className="flex flex-col">
-            <span className="text-[8px] uppercase font-black tracking-widest text-[#D1A5A5]">📍 Station</span>
-            <span className="text-xs font-black text-[#FFA586] truncate max-w-[140px] text-interactive">{selectedLocation.name}</span>
-          </div>
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full border ml-3"
-            style={{ borderColor: band.color + "40", background: band.color + "12" }}>
-            <span className="text-sm">{band.emoji}</span>
-            <span className="text-[9px] font-black uppercase" style={{ color: band.color }}>{band.label}</span>
-          </div>
-        </div>
-
-        <div className="flex-1 max-w-xs mx-6 hidden lg:block">
-          <LocationSearch onSelect={setSelectedLocation} />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex flex-col items-end text-right">
-            <span className="text-[8px] text-[#9BA3AF] font-bold uppercase">🔄 Synced</span>
-            <span className="text-[9px] font-black text-[#B51A2B]">
-              {new Date(data.current_aqi.updated_at).toLocaleTimeString()}
-            </span>
+      <header className="fixed top-5 inset-x-0 z-50 px-4 sm:px-8 pointer-events-none">
+        <div className="max-w-[1440px] mx-auto w-full h-16 bg-[#101525]/85 backdrop-blur-2xl border border-[#384358]/25 rounded-2xl flex items-center justify-between px-6 shadow-2xl pointer-events-auto transition-all">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg" onClick={() => navigate("/")}>
+              <span className="text-xs">🌍</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[7px] uppercase font-black tracking-[0.2em] text-[#D1A5A5]">📍 Real-time Link</span>
+              <span className="text-[11px] font-black text-[#FFA586] truncate max-w-[100px] sm:max-w-[180px] tracking-tight">{selectedLocation.name}</span>
+            </div>
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#B51A2B]/30 bg-[#B51A2B]/10 ml-2">
+              <span className="text-xs">{band.emoji}</span>
+              <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: band.color }}>{band.label}</span>
+            </div>
           </div>
 
-          {/* ── Refresh Button ── */}
-          <button
-            title="Refresh data"
-            onClick={() => {
-              setSpinning(true);
-              setTimeout(() => window.location.reload(), 350);
-            }}
-            className="w-8 h-8 rounded-full bg-[#242F49] border border-[#384358]/30 flex items-center justify-center
-                       hover:bg-[#B51A2B]/20 hover:border-[#B51A2B]/50 transition-all">
-            <RefreshCw size={13} className={`text-[#FFA586] ${spinning ? "animate-spin" : ""}`} />
-          </button>
+          <div className="flex-1 max-w-[200px] sm:max-w-xs mx-4">
+            <LocationSearch onSelect={setSelectedLocation} />
+          </div>
 
-          {/* ── Profile Button + Dropdown ── */}
-          <div className="relative">
+          {/* ── Action Cluster ── */}
+          <div className="flex items-center gap-2 p-1 rounded-xl bg-[#242F49]/40 border border-[#384358]/20 sm:pr-2">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#101525]/50 border border-[#384358]/20">
+              <div className="w-1 h-1 rounded-full bg-[#B51A2B] animate-pulse" />
+              <span className="text-[9px] font-black uppercase tracking-wider text-[#B51A2B]">Live <span className="text-[#FFA586] cursive-accent normal-case tracking-normal">Monitoring</span></span>
+            </div>
+
+            <div className="h-4 w-[1px] bg-[#384358]/40 mx-0.5 hidden sm:block" />
+
             <button
-              title="Profile menu"
-              onClick={() => setProfileOpen(o => !o)}
-              className="w-8 h-8 rounded-full bg-[#242F49] border border-[#384358]/30 flex items-center justify-center
-                         hover:bg-[#B51A2B]/20 hover:border-[#B51A2B]/50 transition-all">
-              <span className="text-sm">👤</span>
+              title="Force Resync"
+              onClick={() => { setSpinning(true); setTimeout(() => window.location.reload(), 350); }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#B51A2B]/20 transition-all text-[#FFA586]">
+              <RefreshCw size={12} className={spinning ? "animate-spin" : ""} />
             </button>
 
-            {profileOpen && (
-              <>
-                {/* Backdrop to close */}
-                <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+            <div className="h-4 w-[1px] bg-[#384358]/40 mx-0.5" />
 
-                {/* Dropdown */}
-                <div className="absolute right-0 top-10 z-50 w-52 glass-card border border-[#384358]/30 rounded-2xl py-2 shadow-2xl backdrop-blur-xl">
-                  <div className="px-4 py-2 border-b border-[#384358]/15 mb-1">
-                    <p className="text-xs font-black text-[#FFA586]">📍 {selectedLocation.name}</p>
-                    <p className="text-[9px] text-[#9BA3AF] font-medium mt-0.5">Current Station</p>
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen(o => !o)}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${profileOpen ? 'bg-[#B51A2B] text-white' : 'hover:bg-[#B51A2B]/20 text-[#9BA3AF]'}`}>
+                <span className="text-xs italic font-black">{selectedLocation.name[0]}</span>
+              </button>
+
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute right-0 top-11 z-50 w-52 glass-card border border-[#384358]/35 rounded-2xl py-3 shadow-[0_10px_40px_rgba(0,0,0,0.6)] backdrop-blur-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="px-5 mb-3">
+                      <p className="text-[8px] font-black text-[#B51A2B] uppercase tracking-[0.2em]">Atmospheric Node</p>
+                      <p className="text-sm font-black text-[#FFA586] truncate">{selectedLocation.name}</p>
+                    </div>
+
+                    <div className="h-[1px] bg-[#384358]/20 mb-2" />
+
+                    <button onClick={() => { setProfileOpen(false); setSelectedLocation(null); }}
+                      className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-[#B51A2B]/10 transition-all text-left">
+                      <Search size={12} className="text-[#B51A2B]" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#FFA586]">Switch Node</span>
+                    </button>
+
+                    <button onClick={() => { setProfileOpen(false); navigate("/"); }}
+                      className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-[#B51A2B]/10 transition-all text-left">
+                      <Home size={12} className="text-[#FFA586]" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#FFA586]">Return Base</span>
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() => { setProfileOpen(false); setSelectedLocation(null); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#B51A2B]/10 transition-all text-left group">
-                    <Search size={13} className="text-[#B51A2B]" />
-                    <div>
-                      <p className="text-xs font-black text-[#FFA586] group-hover:text-[#FFA586] transition-colors">Change Location</p>
-                      <p className="text-[9px] text-[#9BA3AF]">Search a new city</p>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => { setProfileOpen(false); navigate("/"); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#B51A2B]/10 transition-all text-left group">
-                    <Home size={13} className="text-[#FFA586]" />
-                    <div>
-                      <p className="text-xs font-black text-[#FFA586] group-hover:text-[#FFA586] transition-colors">Landing Page</p>
-                      <p className="text-[9px] text-[#9BA3AF]">Back to home</p>
-                    </div>
-                  </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -269,7 +285,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-end gap-2 mb-3">
-                <h2 className="text-8xl font-black leading-none tracking-tighter text-[#FFA586] font-display text-glow"
+                <h2 className="text-6xl sm:text-7xl md:text-8xl font-black leading-none tracking-tighter text-[#FFA586] font-display text-glow"
                   style={{ textShadow: `0 0 40px ${band.color}60` }}>
                   {aqi}
                 </h2>
@@ -319,7 +335,7 @@ export default function Dashboard() {
                     📡 AI-predicted atmospheric trajectory for the next 6 hours
                   </p>
                 </div>
-                <div className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1.5
+                <div className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase flex items-center justify-center sm:justify-start gap-1.5
                   ${forecast6h.length > 1 && forecast6h[forecast6h.length - 1].aqi > forecast6h[0].aqi
                     ? "bg-red-500/10 border border-red-500/30 text-red-400"
                     : "bg-[#B51A2B]/10 border border-[#384358]/30 text-[#B51A2B]"}`}>
@@ -347,10 +363,9 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
 
-              {/* Forecast hour tiles — centered & attractive */}
+              {/* Forecast hour tiles — responsive grid columns */}
               {forecast6h.length > 0 && (
-                <div className="grid mt-5 gap-3"
-                  style={{ gridTemplateColumns: `repeat(${forecast6h.length}, minmax(0, 1fr))` }}>
+                <div className="grid mt-5 gap-3 grid-cols-3 sm:grid-cols-3 md:grid-cols-6">
                   {forecast6h.map((f, i) => {
                     const fb = getAqiBand(f.aqi);
                     return (
@@ -424,7 +439,7 @@ export default function Dashboard() {
               <span className="text-lg">🔬</span>
               <h3 className="text-base font-black text-[#FFA586] uppercase tracking-wide">Pollutant Breakdown</h3>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-4">
               {Object.entries(data.pollutants).map(([key, val]) => {
                 const cfg = POLLUTANT_CONFIG[key] || { name: key.toUpperCase(), icon: Wind, unit: "µg/m³", emoji: "🌬️" };
                 const valNum = typeof val === "object" ? val.value : val;

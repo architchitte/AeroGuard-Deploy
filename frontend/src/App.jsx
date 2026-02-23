@@ -1,5 +1,4 @@
 import { Routes, Route, useLocation } from "react-router-dom";
-import Navbar from "./Components/Navbar";
 
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
@@ -13,7 +12,6 @@ function AppLayout() {
 
   return (
     <div className="bg-void min-h-screen text-slate-300 overflow-x-hidden">
-      <Navbar variant={isLanding ? "landing" : "dashboard"} />
 
       <Routes>
         <Route path="/" element={<LandingPage />} />

@@ -147,20 +147,35 @@ export default function LandingPage() {
             <ScrollBar />
 
             {/* ══ NAV ══ */}
-            <nav className="fixed top-[2px] inset-x-0 z-50 px-6 sm:px-12 h-14 flex items-center justify-between bg-[#101525]/80 backdrop-blur-xl border-b border-[#384358]/15">
-                <div className="flex items-center gap-2 group cursor-pointer">
-                    <span className="text-xl group-hover:scale-125 transition-transform duration-300">🌍</span>
-                    <span className="font-black text-sm text-[#FFA586] tracking-tight text-interactive">AeroGuard<span className="text-[#B51A2B]">.ai</span></span>
+            <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl h-16 rounded-2xl bg-[#101525]/80 backdrop-blur-2xl border border-[#384358]/20 flex items-center justify-between px-8 shadow-2xl transition-all duration-300">
+                <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate("/")}>
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg shadow-[#B51A2B]/20">
+                        <span className="text-sm">🌍</span>
+                    </div>
+                    <span className="font-black text-lg text-[#FFA586] tracking-tighter">AeroGuard<span className="text-[#B51A2B] animate-pulse">.ai</span></span>
                 </div>
-                <div className="hidden md:flex items-center gap-6 text-xs font-bold text-[#9BA3AF]">
-                    <a href="#features" className="hover:text-[#FFA586] transition-colors">Features</a>
-                    <a href="#heatmap" className="hover:text-[#FFA586] transition-colors">Live Map</a>
-                    <a href="#about" className="hover:text-[#FFA586] transition-colors">About</a>
+
+                <div className="hidden md:flex items-center gap-10 text-[10px] uppercase font-black tracking-widest text-[#9BA3AF]">
+                    <a href="#features" className="hover:text-[#FFA586] transition-all hover:scale-110">Capabilities</a>
+                    <a href="#heatmap" className="hover:text-[#FFA586] transition-all hover:scale-110">Live Map</a>
+                    <a href="#about" className="hover:text-[#FFA586] transition-all hover:scale-110">Project</a>
                 </div>
-                <button onClick={() => navigate("/dashboard")}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#B51A2B] text-white text-xs font-black hover:bg-[#B51A2B]/80 transition-all shadow-lg shadow-[#B51A2B]/20">
-                    Open Dashboard <ArrowRight size={12} />
-                </button>
+
+                <div className="flex items-center gap-3">
+                    <button onClick={() => navigate("/dashboard")}
+                        className="px-6 py-2.5 rounded-xl bg-[#B51A2B] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#B51A2B]/80 transition-all shadow-lg shadow-[#B51A2B]/20 flex items-center gap-2 active:scale-95">
+                        <span className="hidden sm:inline">Launch Console</span>
+                        <span className="sm:hidden">Console</span>
+                        <ArrowRight size={12} />
+                    </button>
+                    {/* Simple Mobile Trigger Hint */}
+                    <div className="md:hidden w-8 h-8 rounded-lg bg-[#242F49] border border-[#384358]/30 flex items-center justify-center">
+                        <div className="flex flex-col gap-1">
+                            <div className="w-3 h-[2px] bg-[#FFA586]" />
+                            <div className="w-2 h-[2px] bg-[#B51A2B]" />
+                        </div>
+                    </div>
+                </div>
             </nav>
 
             {/* ══ HERO ══ */}

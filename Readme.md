@@ -28,7 +28,7 @@ AeroGuard is a **cinematic, AI-driven atmospheric intelligence platform** design
 ## 🔮 Future Scope & "Student Scale" Reality
 
 ### Limitations (The Student Scale)
-- **API Constraints**: Currently relies on the WAQI API standard tier which has rate limits (2,000 requests/minute). Full-scale commercial deployment would require a professional tier.
+- **API Constraints**: Currently relies on the WAQI API which has a default programmatic quota of **1,000 requests per minute** (with bursts up to 60 requests). Full-scale commercial deployment would require a dedicated institutional agreement.
 - **Hosting**: Designed as a local-first development project; scalable cloud hosting (AWS/GCP) for the ML models and data ingestion is planned for post-competition.
 - **Sensor Density**: While we use 250+ official stations, hyper-local street-level data is currently limited by public station availability.
 
@@ -107,13 +107,17 @@ Built with ❤️ by **Team 70 — CultBoyz** for **AIColegion 2026** @ **VESIT 
 <table align="center">
   <tr>
     <td align="center">
-      <img src="https://github.com/anshul.png" width="100px;" alt="Anshul Patil"/><br />
-      <sub><b>Anshul Patil</b></sub><br />
+      <a href="https://github.com/Anshul-patil10">
+        <img src="https://avatars.githubusercontent.com/Anshul-patil10?v=4" width="100px;" alt="Anshul Patil"/><br />
+        <sub><b>Anshul Patil</b></sub>
+      </a><br />
       <sub>Frontend Design &<br/>API Integration</sub>
     </td>
     <td align="center">
-      <img src="https://github.com/archit.png" width="100px;" alt="Archit Chitte"/><br />
-      <sub><b>Archit Chitte</b></sub><br />
+      <a href="https://github.com/architchitte">
+        <img src="https://avatars.githubusercontent.com/architchitte?v=4" width="100px;" alt="Archit Chitte"/><br />
+        <sub><b>Archit Chitte</b></sub>
+      </a><br />
       <sub>Backend, ML Models &<br/>Model Integration</sub>
     </td>
   </tr>
