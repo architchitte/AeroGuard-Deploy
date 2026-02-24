@@ -190,15 +190,15 @@ export default function Dashboard() {
       </div>
 
       {/* ══ HEADER ══ */}
-      <header className="fixed top-5 inset-x-0 z-50 px-4 sm:px-8 pointer-events-none">
-        <div className="max-w-[1440px] mx-auto w-full h-16 bg-[#101525]/85 backdrop-blur-2xl border border-[#384358]/25 rounded-2xl flex items-center justify-between px-6 shadow-2xl pointer-events-auto transition-all">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg" onClick={() => navigate("/")}>
+      <header className="fixed top-3 sm:top-5 inset-x-0 z-50 px-3 sm:px-8 pointer-events-none">
+        <div className="max-w-[1440px] mx-auto w-full h-14 sm:h-16 bg-[#101525]/85 backdrop-blur-2xl border border-[#384358]/25 rounded-2xl flex items-center justify-between px-3 sm:px-6 shadow-2xl pointer-events-auto transition-all">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg cursor-pointer" onClick={() => navigate("/")}>
               <span className="text-xs">🌍</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[7px] uppercase font-black tracking-[0.2em] text-[#D1A5A5]">📍 Real-time Link</span>
-              <span className="text-[11px] font-black text-[#FFA586] truncate max-w-[100px] sm:max-w-[180px] tracking-tight">{selectedLocation.name}</span>
+              <span className="text-[7px] uppercase font-black tracking-[0.2em] text-[#D1A5A5] hidden sm:block">📍 Real-time Link</span>
+              <span className="text-[10px] sm:text-[11px] font-black text-[#FFA586] truncate max-w-[80px] sm:max-w-[180px] tracking-tight">{selectedLocation.name}</span>
             </div>
             <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#B51A2B]/30 bg-[#B51A2B]/10 ml-2">
               <span className="text-xs">{band.emoji}</span>
@@ -206,12 +206,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex-1 max-w-[200px] sm:max-w-xs mx-4">
+          <div className="flex-1 max-w-[140px] sm:max-w-[200px] md:max-w-xs mx-2 sm:mx-4">
             <LocationSearch onSelect={setSelectedLocation} />
           </div>
 
           {/* ── Action Cluster ── */}
-          <div className="flex items-center gap-2 p-1 rounded-xl bg-[#242F49]/40 border border-[#384358]/20 sm:pr-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 p-1 rounded-xl bg-[#242F49]/40 border border-[#384358]/20">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#101525]/50 border border-[#384358]/20">
               <div className="w-1 h-1 rounded-full bg-[#B51A2B] animate-pulse" />
               <span className="text-[9px] font-black uppercase tracking-wider text-[#B51A2B]">Live <span className="text-[#FFA586] cursive-accent normal-case tracking-normal">Monitoring</span></span>
@@ -222,8 +222,8 @@ export default function Dashboard() {
             <button
               title="Force Resync"
               onClick={() => { setSpinning(true); setTimeout(() => window.location.reload(), 350); }}
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#B51A2B]/20 transition-all text-[#FFA586]">
-              <RefreshCw size={12} className={spinning ? "animate-spin" : ""} />
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center hover:bg-[#B51A2B]/20 transition-all text-[#FFA586]">
+              <RefreshCw size={11} className={spinning ? "animate-spin" : ""} />
             </button>
 
             <div className="h-4 w-[1px] bg-[#384358]/40 mx-0.5" />
@@ -231,7 +231,7 @@ export default function Dashboard() {
             <div className="relative">
               <button
                 onClick={() => setProfileOpen(o => !o)}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${profileOpen ? 'bg-[#B51A2B] text-white' : 'hover:bg-[#B51A2B]/20 text-[#9BA3AF]'}`}>
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all ${profileOpen ? 'bg-[#B51A2B] text-white' : 'hover:bg-[#B51A2B]/20 text-[#9BA3AF]'}`}>
                 <span className="text-xs italic font-black">{selectedLocation.name[0]}</span>
               </button>
 
@@ -266,13 +266,13 @@ export default function Dashboard() {
       </header>
 
       {/* ══ MAIN GRID ══ */}
-      <main className="pt-20 pb-10 px-4 sm:px-8 max-w-[1440px] mx-auto relative z-10 w-full flex-1">
+      <main className="pt-20 pb-10 px-3 sm:px-4 md:px-8 max-w-[1440px] mx-auto relative z-10 w-full flex-1">
 
         {/* ── ROW 1: AQI HERO + FORECAST (hero features side by side) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
 
           {/* ▶ AQI HERO — 4 cols */}
-          <div className="lg:col-span-4 glass-card rounded-3xl p-7 relative overflow-hidden group"
+          <div className="lg:col-span-4 glass-card rounded-3xl p-5 sm:p-7 relative overflow-hidden group"
             style={{ background: `linear-gradient(135deg, ${band.color}12 0%, rgba(36,47,73,0.8) 60%)` }}>
             <div className="absolute -top-20 -right-20 w-56 h-56 blur-[90px] rounded-full opacity-20 group-hover:opacity-40 transition-all duration-700"
               style={{ background: band.color }} />
@@ -285,7 +285,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-end gap-2 mb-3">
-                <h2 className="text-6xl sm:text-7xl md:text-8xl font-black leading-none tracking-tighter text-[#FFA586] font-display text-glow"
+                <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none tracking-tighter text-[#FFA586] font-display text-glow"
                   style={{ textShadow: `0 0 40px ${band.color}60` }}>
                   {aqi}
                 </h2>
@@ -401,7 +401,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
 
           {/* ▶ ADVANCED ANALYTICS — 8 cols */}
-          <div className="lg:col-span-8 glass-card rounded-3xl p-7 relative overflow-hidden">
+          <div className="lg:col-span-8 glass-card rounded-3xl p-5 sm:p-7 relative overflow-hidden">
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-[#FFA586]/5 blur-[60px] rounded-full" />
             <div className="flex items-center gap-2 mb-5 relative">
               <span className="text-lg">📊</span>
@@ -415,7 +415,7 @@ export default function Dashboard() {
           </div>
 
           {/* ▶ AI BRIEFING — 4 cols */}
-          <div className="lg:col-span-4 glass-card rounded-3xl p-7 relative overflow-hidden group"
+          <div className="lg:col-span-4 glass-card rounded-3xl p-5 sm:p-7 relative overflow-hidden group"
             style={{ background: "linear-gradient(135deg, rgba(181,26,43,0.08) 0%, rgba(36,47,73,0.85) 100%)" }}>
             <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#B51A2B]/10 blur-[60px] rounded-full" />
             <div className="flex items-center gap-2 mb-5 relative">
@@ -490,12 +490,12 @@ export default function Dashboard() {
       </main>
 
       {/* ══ FOOTER ══ */}
-      <footer className="py-6 px-8 border-t border-[#384358]/15 flex justify-between items-center bg-[#101525]/70 backdrop-blur-md relative z-10">
-        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[#9BA3AF]">
+      <footer className="py-4 sm:py-6 px-4 sm:px-8 border-t border-[#384358]/15 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 bg-[#101525]/70 backdrop-blur-md relative z-10 text-center sm:text-left">
+        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[#9BA3AF] justify-center sm:justify-start">
           <span>🌍</span>
           <span className="cursive-accent text-lg normal-case tracking-normal">AeroGuard</span> <span className="ml-1">Intelligence</span>
         </div>
-        <div className="flex items-center gap-4 text-[9px] font-black uppercase tracking-widest">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[9px] font-black uppercase tracking-widest">
           <span className="flex items-center gap-1.5 text-[#B51A2B]">
             <div className="w-1.5 h-1.5 rounded-full bg-[#B51A2B] animate-pulse" />
             Systems Online

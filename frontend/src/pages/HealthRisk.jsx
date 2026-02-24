@@ -96,18 +96,18 @@ export function HealthRisk() {
   return (
     <div className="min-h-screen bg-[#101525] relative overflow-hidden font-sans">
       {/* ══ NAV ══ */}
-      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl h-16 rounded-2xl bg-[#101525]/80 backdrop-blur-2xl border border-[#384358]/20 flex items-center justify-between px-8 shadow-2xl transition-all duration-300 pointer-events-auto">
-        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate("/")}>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg shadow-[#B51A2B]/20">
-            <span className="text-sm">🌍</span>
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl h-14 sm:h-16 rounded-2xl bg-[#101525]/80 backdrop-blur-2xl border border-[#384358]/20 flex items-center justify-between px-4 sm:px-8 shadow-2xl transition-all duration-300 pointer-events-auto">
+        <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer" onClick={() => navigate("/")}>
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg shadow-[#B51A2B]/20">
+            <span className="text-xs sm:text-sm">🌍</span>
           </div>
-          <span className="font-black text-lg text-[#FFA586] tracking-tighter">AeroGuard<span className="text-[#B51A2B] animate-pulse">.ai</span></span>
+          <span className="font-black text-base sm:text-lg text-[#FFA586] tracking-tighter">AeroGuard<span className="text-[#B51A2B] animate-pulse">.ai</span></span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button onClick={() => navigate("/dashboard")}
-            className="px-6 py-2.5 rounded-xl bg-[#242F49] border border-[#384358]/40 text-[#FFA586] text-[10px] font-black uppercase tracking-widest hover:border-[#B51A2B]/50 transition-all flex items-center gap-2 active:scale-95">
-            <ArrowLeft size={12} /> Return Dashboard
+            className="px-3 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#242F49] border border-[#384358]/40 text-[#FFA586] text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:border-[#B51A2B]/50 transition-all flex items-center gap-1.5 sm:gap-2 active:scale-95">
+            <ArrowLeft size={11} /> <span className="hidden sm:inline">Return</span> Dashboard
           </button>
         </div>
       </nav>
@@ -116,22 +116,22 @@ export function HealthRisk() {
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#B51A2B]/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[20%] left-[-5%] w-[30%] h-[30%] bg-[#541A2B]/10 blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 space-y-12">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12 space-y-8 sm:space-y-12">
         {/* Navigation & Header */}
-        <header className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
+        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={() => navigate("/dashboard")}
-              className="p-3 rounded-2xl glass-panel hover:border-[#B51A2B]/40 hover:bg-[#B51A2B]/5 transition-all group"
+              className="p-2.5 sm:p-3 rounded-2xl glass-panel hover:border-[#B51A2B]/40 hover:bg-[#B51A2B]/5 transition-all group"
             >
-              <ArrowLeft className="w-5 h-5 text-[#FFA586] group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFA586] group-hover:-translate-x-1 transition-transform" />
             </button>
             <div className="space-y-1">
-              <h1 className="text-4xl font-black text-glow tracking-tight text-white flex items-center gap-3">
+              <h1 className="text-3xl sm:text-4xl font-black text-glow tracking-tight text-white flex items-center gap-3">
                 Health <span className="text-gradient">Intelligence</span>
               </h1>
-              <p className="text-[#9BA3AF] text-sm font-medium tracking-wide flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#B51A2B]" />
+              <p className="text-[#9BA3AF] text-xs sm:text-sm font-medium tracking-wide flex items-center gap-2">
+                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#B51A2B]" />
                 Personalized AI-driven biological impact analysis
               </p>
             </div>
@@ -196,13 +196,13 @@ export function HealthRisk() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
               {/* AQI Hero Card */}
               <div className="lg:col-span-12 xl:col-span-8 group">
-                <div className="h-full glass-card rounded-[3rem] p-10 flex flex-col md:flex-row items-center gap-12 relative overflow-hidden border-[#384358]/20 transition-all hover:border-[#B51A2B]/30 shadow-2xl">
+                <div className="h-full glass-card rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-12 relative overflow-hidden border-[#384358]/20 transition-all hover:border-[#B51A2B]/30 shadow-2xl">
                   {/* Visual Background Glow */}
                   <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#B51A2B]/10 to-transparent blur-[80px] group-hover:blur-[100px] transition-all" />
 
                   {/* AQI Gauge Display */}
                   <div className="relative flex-shrink-0">
-                    <div className="w-48 h-48 rounded-full border-[10px] border-[#384358]/20 flex items-center justify-center relative">
+                    <div className="w-36 h-36 sm:w-48 sm:h-48 rounded-full border-[8px] sm:border-[10px] border-[#384358]/20 flex items-center justify-center relative">
                       <div
                         className="absolute inset-[-10px] rounded-full border-[10px] border-transparent border-t-[#B51A2B] transition-all duration-1000 rotate-[45deg]"
                         style={{
@@ -211,19 +211,19 @@ export function HealthRisk() {
                         }}
                       />
                       <div className="text-center group-hover:scale-110 transition-transform">
-                        <p className="text-6xl font-black text-white tracking-tighter leading-none">{aqiData?.aqi ?? '--'}</p>
-                        <p className="text-[10px] font-black text-[#9BA3AF] uppercase tracking-[0.2em] mt-2">AQI Score</p>
+                        <p className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none">{aqiData?.aqi ?? '--'}</p>
+                        <p className="text-[9px] sm:text-[10px] font-black text-[#9BA3AF] uppercase tracking-[0.2em] mt-1 sm:mt-2">AQI Score</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex-1 space-y-6 relative z-10 w-full">
+                  <div className="flex-1 space-y-4 sm:space-y-6 relative z-10 w-full text-center sm:text-left">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 justify-center sm:justify-start">
                         <MapPin size={14} className="text-[#B51A2B]" />
                         <span className="text-[11px] font-black uppercase text-[#B51A2B] tracking-[0.2em]">Atmospheric Node</span>
                       </div>
-                      <h2 className="text-5xl font-black text-white tracking-tight leading-none">{activeLocation}</h2>
+                      <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-none">{activeLocation}</h2>
                       <div
                         className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border"
                         style={{

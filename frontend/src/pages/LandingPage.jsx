@@ -147,12 +147,12 @@ export default function LandingPage() {
             <ScrollBar />
 
             {/* ══ NAV ══ */}
-            <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl h-16 rounded-2xl bg-[#101525]/80 backdrop-blur-2xl border border-[#384358]/20 flex items-center justify-between px-8 shadow-2xl transition-all duration-300">
-                <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate("/")}>
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg shadow-[#B51A2B]/20">
-                        <span className="text-sm">🌍</span>
+            <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl h-14 sm:h-16 rounded-2xl bg-[#101525]/80 backdrop-blur-2xl border border-[#384358]/20 flex items-center justify-between px-4 sm:px-8 shadow-2xl transition-all duration-300">
+                <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer" onClick={() => navigate("/")}>
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#B51A2B] to-[#FFA586] flex items-center justify-center shadow-lg shadow-[#B51A2B]/20">
+                        <span className="text-xs sm:text-sm">🌍</span>
                     </div>
-                    <span className="font-black text-lg text-[#FFA586] tracking-tighter">AeroGuard<span className="text-[#B51A2B] animate-pulse">.ai</span></span>
+                    <span className="font-black text-base sm:text-lg text-[#FFA586] tracking-tighter">AeroGuard<span className="text-[#B51A2B] animate-pulse">.ai</span></span>
                 </div>
 
                 <div className="hidden md:flex items-center gap-10 text-[10px] uppercase font-black tracking-widest text-[#9BA3AF]">
@@ -161,20 +161,14 @@ export default function LandingPage() {
                     <a href="#about" className="hover:text-[#FFA586] transition-all hover:scale-110">Project</a>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <button onClick={() => navigate("/dashboard")}
-                        className="px-6 py-2.5 rounded-xl bg-[#B51A2B] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#B51A2B]/80 transition-all shadow-lg shadow-[#B51A2B]/20 flex items-center gap-2 active:scale-95">
-                        <span className="hidden sm:inline">Launch Console</span>
-                        <span className="sm:hidden">Console</span>
-                        <ArrowRight size={12} />
+                        className="px-3 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#B51A2B] text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:bg-[#B51A2B]/80 transition-all shadow-lg shadow-[#B51A2B]/20 flex items-center gap-1.5 sm:gap-2 active:scale-95">
+                        <span className="hidden xs:inline">Launch</span>
+                        <span className="inline xs:hidden">🚀</span>
+                        <span className="hidden sm:inline">Console</span>
+                        <ArrowRight size={11} />
                     </button>
-                    {/* Simple Mobile Trigger Hint */}
-                    <div className="md:hidden w-8 h-8 rounded-lg bg-[#242F49] border border-[#384358]/30 flex items-center justify-center">
-                        <div className="flex flex-col gap-1">
-                            <div className="w-3 h-[2px] bg-[#FFA586]" />
-                            <div className="w-2 h-[2px] bg-[#B51A2B]" />
-                        </div>
-                    </div>
                 </div>
             </nav>
 
@@ -186,20 +180,20 @@ export default function LandingPage() {
                 <div className="absolute inset-0 pointer-events-none z-[1] transition-all duration-300"
                     style={{ background: `radial-gradient(500px circle at ${mousePos.x}px ${mousePos.y}px, rgba(181,26,43,0.09), transparent 65%)` }} />
 
-                <div className="relative z-10 max-w-5xl mx-auto space-y-8">
+                <div className="relative z-10 max-w-5xl mx-auto space-y-6 sm:space-y-8">
                     {/* Badge */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-                        className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#242F49]/80 border border-[#384358]/50 backdrop-blur-xl">
+                        className="inline-flex items-center gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#242F49]/80 border border-[#384358]/50 backdrop-blur-xl">
                         <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>✨</motion.span>
-                        <span className="text-[10px] font-black text-[#B51A2B] tracking-widest uppercase flex items-center gap-2">
-                            <span className="cursive-accent normal-case tracking-normal text-[#FFA586] mr-1">AI-Powered</span> Atmospheric Intelligence
+                        <span className="text-[9px] sm:text-[10px] font-black text-[#B51A2B] tracking-widest uppercase flex items-center gap-2">
+                            <span className="cursive-accent normal-case tracking-normal text-[#FFA586] mr-1">AI-Powered</span><span className="hidden sm:inline"> Atmospheric Intelligence</span><span className="sm:hidden"> Air AI</span>
                         </span>
                         <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.75 }}>✨</motion.span>
                     </motion.div>
 
                     {/* Headline */}
                     <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.15 }}>
-                        <h1 className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] font-display">
+                        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] font-display">
                             <span className="text-[#FFA586] block text-glow">Invisible Threats,</span>
                             <span className="block mt-2 text-gradient py-2">
                                 Visible Solutions. 💨
@@ -209,7 +203,7 @@ export default function LandingPage() {
 
                     {/* Sub */}
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }}
-                        className="text-lg md:text-xl text-[#FFA586] max-w-2xl mx-auto font-medium leading-relaxed italic">
+                        className="text-base sm:text-lg md:text-xl text-[#FFA586] max-w-2xl mx-auto font-medium leading-relaxed italic px-2 sm:px-0">
                         Hyper-local air quality intelligence designed for your health.
                         <br className="hidden md:block" />
                         <span className="text-[#D1A5A5] not-italic text-sm font-bold tracking-wide mt-2 block">
@@ -219,16 +213,16 @@ export default function LandingPage() {
 
                     {/* CTAs */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
-                        className="flex flex-wrap items-center justify-center gap-4">
+                        className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                         <motion.button onClick={() => navigate("/dashboard")}
                             whileHover={{ scale: 1.04, boxShadow: "0 20px 60px rgba(181,26,43,0.45)" }}
                             whileTap={{ scale: 0.97 }}
-                            className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-[#B51A2B] text-[#101525] font-black text-sm shadow-xl shadow-[#B51A2B]/30">
+                            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[#B51A2B] text-[#101525] font-black text-sm shadow-xl shadow-[#B51A2B]/30">
                             🚀 Launch Dashboard <ArrowRight size={16} />
                         </motion.button>
                         <motion.a href="#features"
                             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                            className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-[#242F49] border border-[#384358]/40 text-[#FFA586] font-black text-sm cursor-pointer hover:border-[#B51A2B]/50 transition-all">
+                            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[#242F49] border border-[#384358]/40 text-[#FFA586] font-black text-sm cursor-pointer hover:border-[#B51A2B]/50 transition-all">
                             🔍 Explore Features
                         </motion.a>
                     </motion.div>
@@ -321,8 +315,8 @@ export default function LandingPage() {
                     </p>
                 </Reveal>
                 <Reveal delay={0.2}>
-                    {/* Height set tall enough to show full India map (lat 8°N – 37°N) */}
-                    <div className="max-w-6xl mx-auto rounded-3xl overflow-hidden border border-[#384358]/30 shadow-2xl" style={{ height: 680 }}>
+                    {/* Responsive height for the India heatmap */}
+                    <div className="max-w-6xl mx-auto rounded-3xl overflow-hidden border border-[#384358]/30 shadow-2xl" style={{ height: 'clamp(320px, 55vw, 680px)' }}>
                         <PollutionHeatmap />
                     </div>
                 </Reveal>
@@ -418,17 +412,17 @@ export default function LandingPage() {
             </section>
 
             {/* ══ FOOTER ══ */}
-            <footer className="py-8 px-8 border-t border-[#384358]/15 flex flex-wrap justify-between items-center gap-4 bg-[#101525]/80">
-                <div className="flex items-center gap-2">
+            <footer className="py-6 sm:py-8 px-5 sm:px-8 border-t border-[#384358]/15 flex flex-col sm:flex-row flex-wrap justify-between items-center gap-3 sm:gap-4 bg-[#101525]/80 text-center sm:text-left">
+                <div className="flex items-center gap-2 justify-center sm:justify-start">
                     <span className="text-lg">🌍</span>
                     <span className="text-xs font-black text-[#FFA586]">AeroGuard<span className="text-[#B51A2B]">.ai</span></span>
                 </div>
-                <div className="flex items-center gap-6 text-[10px] font-bold text-[#9BA3AF] uppercase tracking-widest">
+                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-[10px] font-bold text-[#9BA3AF] uppercase tracking-widest">
                     <span>🏆 AIColegion 2026</span>
                     <span>⚡ Team CultBoyz · VESIT</span>
                     <span>© 2026</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#B51A2B] animate-pulse" />
                     <span className="text-[10px] font-black text-[#B51A2B] uppercase tracking-widest">All Systems Live</span>
                 </div>

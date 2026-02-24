@@ -144,3 +144,53 @@ h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: #B51A2B;
 }
+
+/* ——— Mobile Enhancements ——— */
+
+/* Safe area insets for notched phones (iPhone X+, modern Android) */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  footer, header, nav {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Smooth momentum scrolling on iOS */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Minimum touch target size (44px) for all interactive elements */
+button, a, [role="button"] {
+  min-height: 36px;
+  touch-action: manipulation;
+}
+
+/* Prevent text size inflation on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Fix native select on dark backgrounds */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* Remove tap highlight flash on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scroll for horizontal overflow containers */
+.overflow-x-auto {
+  scrollbar-width: none;
+}
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
