@@ -223,9 +223,9 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = True  # Require HTTPS in production
 
     # Production must specify origins - no defaults
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
-    if not CORS_ORIGINS or CORS_ORIGINS == ['']:
+    CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+    if not CORS_ORIGINS:
         raise ValueError(
             "CORS_ORIGINS environment variable must be explicitly set in production. "
-            "Example: CORS_ORIGINS=https://app.aeroguard.com,https://www.aeroguard.com"
+            "Example: CORS_ORIGINS=https://aero-guard-deploy.vercel.app,http://localhost:5173"
         )
