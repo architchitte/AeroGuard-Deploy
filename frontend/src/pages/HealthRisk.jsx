@@ -5,8 +5,7 @@ import healthRiskService, { getHealthRisk } from "../api/healthRiskService";
 import { useForecast6h } from "../hooks/forcast6h.js";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import { API_BASE_URL } from "../api/apiConfig";
 
 /* ——— AQI HELPERS ——— */
 const getAQIColor = (aqi) => {

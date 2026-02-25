@@ -5,8 +5,7 @@
  */
 
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { API_BASE_URL } from './apiConfig';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -74,13 +73,13 @@ export const getPatternAnalysis = async (location) => {
 const getFallbackForecast = (location, hours) => {
     const now = new Date();
     const forecast = [];
-    
+
     for (let i = 0; i < hours; i++) {
         const timestamp = new Date(now.getTime() + (i + 1) * 3600000);
         const baseAqi = 100 + Math.sin(i / 4) * 20;
         const variation = Math.random() * 10 - 5;
         const aqi = Math.max(0, baseAqi + variation);
-        
+
         forecast.push({
             timestamp: timestamp.toISOString(),
             hour_offset: i + 1,
@@ -89,9 +88,9 @@ const getFallbackForecast = (location, hours) => {
             upper_bound: Math.round((aqi * 1.2) * 10) / 10
         });
     }
-    
+
     const aqiValues = forecast.map(f => f.aqi_forecast);
-    
+
     return {
         location,
         forecast_hours: hours,

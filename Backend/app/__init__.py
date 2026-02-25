@@ -120,17 +120,24 @@ def _setup_cors(app):
         app (Flask): Flask application instance
     """
     try:
+        # Get origins from config
+        origins = app.config.get("CORS_ORIGINS", ["*"])
+        
+        # In development, always allow all
+        if app.config.get("ENV") == "development":
+            origins = "*"
+            
         cors_config = {
-            "origins": app.config.get("CORS_ORIGINS", "*"),
+            "origins": origins,
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
             "expose_headers": ["X-Request-ID", "X-Response-Time"],
-            "supports_credentials": True,
+            "supports_credentials": False, # Changed to False for better compatibility with '*'
             "max_age": 3600
         }
         
         CORS(app, resources={r"/*": cors_config})
-        logger.info(f"✓ CORS initialized with origins: {cors_config['origins']}")
+        logger.info(f"✓ CORS initialized with origins: {origins}")
     except Exception as e:
         logger.error(f"✗ CORS initialization failed: {e}")
         raise

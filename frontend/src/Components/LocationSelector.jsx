@@ -1,5 +1,6 @@
+import { Search, MapPin, Loader2, X } from "lucide-react";
+import { API_BASE_URL } from "../api/apiConfig";
 import { useState, useRef, useEffect } from "react";
-import { MapPin, Search, Loader2 } from "lucide-react";
 
 export default function LocationSearch({ onSelect }) {
   const [query, setQuery] = useState("");
@@ -11,7 +12,7 @@ export default function LocationSearch({ onSelect }) {
   const searchLocation = async (text) => {
     setQuery(text);
     if (text.length < 3) { setResults([]); return; }
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+    const API_BASE = API_BASE_URL;
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/v1/realtime-aqi/search?q=${encodeURIComponent(text)}`);

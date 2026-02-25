@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -6,8 +5,13 @@ import {
   CircleMarker,
   Tooltip,
   useMap,
-  Polyline
+  Polyline,
+  Marker,
+  Popup,
+  ZoomControl,
+  useMapEvents
 } from "react-leaflet";
+import { API_BASE_URL } from "../api/apiConfig";
 
 // Custom grid lines component to match user's reference image
 function GridLines() {
@@ -256,7 +260,7 @@ export default function PollutionHeatmap({ externalLocation, onLocationSelect })
 
         {/* WAQI Official Tiles - Using Backend Proxy for security */}
         <TileLayer
-          url={`${import.meta.env.VITE_API_BASE_URL}/api/v1/realtime-aqi/tiles/{z}/{x}/{y}.png`}
+          url={`${API_BASE_URL}/api/v1/realtime-aqi/tiles/{z}/{x}/{y}.png`}
           attribution='&copy; World Air Quality Index Project'
           opacity={0.8}
           zIndex={10}

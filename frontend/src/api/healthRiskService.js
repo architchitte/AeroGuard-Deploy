@@ -5,8 +5,7 @@
  */
 
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { API_BASE_URL } from './apiConfig';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -29,10 +28,10 @@ export const getHealthRisk = async (aqi, location = null, pollutant = 'PM2.5', p
             aqi,
             pollutant
         };
-        
+
         if (location) params.location = location;
         if (persona) params.persona = persona;
-        
+
         const response = await apiClient.get('/api/v1/health-risk', { params });
         return response.data;
     } catch (error) {
@@ -51,12 +50,12 @@ export const getHealthRisk = async (aqi, location = null, pollutant = 'PM2.5', p
  */
 export const getMultiPersonaAdvice = async (aqi, location, personas = ['General Public', 'Children', 'Elderly', 'Athletes']) => {
     try {
-        const advicePromises = personas.map(persona => 
+        const advicePromises = personas.map(persona =>
             getHealthRisk(aqi, location, 'PM2.5', persona)
         );
-        
+
         const results = await Promise.all(advicePromises);
-        
+
         return personas.reduce((acc, persona, index) => {
             acc[persona] = results[index];
             return acc;
@@ -73,7 +72,7 @@ export const getMultiPersonaAdvice = async (aqi, location, personas = ['General 
 const getFallbackHealthRisk = (aqi, location, pollutant, persona) => {
     const category = classifyAQI(aqi);
     const riskLevel = getRiskLevel(category);
-    
+
     return {
         timestamp: new Date().toISOString(),
         location: location,
