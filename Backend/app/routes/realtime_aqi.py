@@ -293,7 +293,7 @@ def proxy_waqi_tiles(z, x, y):
     from flask import Response
     
     try:
-        url = f"https://tiles.waqi.info/tiles/heatmap/{z}/{x}/{y}.png?token={aqi_service.api_key}"
+        url = f"https://tiles.waqi.info/tiles/usepa-aqi/{z}/{x}/{y}.png?token={aqi_service.api_key}"
         response = requests.get(url, timeout=10)
         
         if response.status_code == 200:
