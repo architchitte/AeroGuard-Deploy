@@ -107,36 +107,20 @@ def create_app(config_class=None):
 
 
 def _setup_cors(app):
-    """
-    Configure CORS (Cross-Origin Resource Sharing).
-
-    Allows:
-    - Specified origins only (from CORS_ORIGINS config)
-    - Common methods (GET, POST, PUT, DELETE, OPTIONS)
-    - Common headers (Content-Type, Authorization)
-    - Credentials (cookies, authorization headers)
-
-    Args:
-        app (Flask): Flask application instance
-    """
+    """Configure CORS (Cross-Origin Resource Sharing)."""
     try:
-        # Get origins from config
-        origins = app.config.get("CORS_ORIGINS", ["*"])
-        
-        # In development, always allow all
-        if app.config.get("ENV") == "development":
+        origins = app.config.get("CORS_ORIGINS", "*")
+        if isinstance(origins, list) and not origins:
             origins = "*"
             
-        cors_config = {
+        CORS(app, resources={r"/*": {
             "origins": origins,
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
             "expose_headers": ["X-Request-ID", "X-Response-Time"],
-            "supports_credentials": False, # Changed to False for better compatibility with '*'
+            "supports_credentials": False,
             "max_age": 3600
-        }
-        
-        CORS(app, resources={r"/*": cors_config})
+        }})
         logger.info(f"✓ CORS initialized with origins: {origins}")
     except Exception as e:
         logger.error(f"✗ CORS initialization failed: {e}")

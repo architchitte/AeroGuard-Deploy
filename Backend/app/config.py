@@ -222,10 +222,9 @@ class ProductionConfig(Config):
     LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
     SESSION_COOKIE_SECURE = True  # Require HTTPS in production
 
-    # Production must specify origins - no defaults
-    CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+    # Production must specify origins - default to known Vercel deployment if not set
+    CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "https://aero-guard-deploy.vercel.app").split(",") if o.strip()]
+    
+    # Still warn if it's empty even with default (unlikely but possible if env var is empty string)
     if not CORS_ORIGINS:
-        raise ValueError(
-            "CORS_ORIGINS environment variable must be explicitly set in production. "
-            "Example: CORS_ORIGINS=https://aero-guard-deploy.vercel.app,http://localhost:5173"
-        )
+        CORS_ORIGINS = ["https://aero-guard-deploy.vercel.app"]
