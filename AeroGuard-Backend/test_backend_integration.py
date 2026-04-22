@@ -26,7 +26,7 @@ def print_failure(msg: str):
 
 def test_health_risk(client: httpx.Client):
     print(f"\n{CYAN}--- Test 1: Health Risk Logic ---{RESET}")
-    url = f"{BASE_URL}/api/v1/health-risk"
+    url = f"{BASE_URL}/api/v1/health-risk/"
     params = {"aqi": 145, "persona": "Children / Elderly"}
     
     try:
@@ -53,8 +53,8 @@ def test_ml_forecasting(client: httpx.Client):
     payload = {"features": dummy_features}
     
     try:
-        # Added timeout=30.0 to handle XGBoost/LSTM/SARIMA artifact cold-loading
-        response = client.post(url, json=payload, timeout=30.0)
+        # Increased timeout to 90.0 to handle massive ensemble cold-start loading
+        response = client.post(url, json=payload, timeout=90.0)
         if response.status_code == 200:
             data = response.json()
             if "forecasts" in data and "components" in data:
@@ -71,6 +71,7 @@ def test_ml_forecasting(client: httpx.Client):
 def test_waqi_realtime(client: httpx.Client):
     print(f"\n{CYAN}--- Test 3: WAQI Realtime Service ---{RESET}")
     # Corrected target URL to point to the specific city endpoint defined in realtime.py
+    # Targeted absolute URL: prefix '/api/v1/realtime-aqi' + route '/city/{city_name}'
     url = f"{BASE_URL}/api/v1/realtime-aqi/city/Mumbai"
     
     try:

@@ -1,7 +1,18 @@
 from fastapi import APIRouter
 from fastapi.responses import Response
 
+from app.services.waqi_service import fetch_realtime_aqi
+
 router = APIRouter(prefix="/api/v1/realtime-aqi", tags=["Realtime AQI"])
+
+@router.get("/city/{city_name}")
+async def get_city_aqi(city_name: str):
+    """
+    Fetch real-time AQI data for a specific city via WAQI.
+    """
+    data = await fetch_realtime_aqi(city=city_name)
+    return {"status": "success", "city": city_name, "data": data}
+
 
 @router.get("/popular-cities")
 async def get_popular_cities():

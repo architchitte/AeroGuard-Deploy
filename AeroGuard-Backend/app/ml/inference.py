@@ -5,7 +5,9 @@ import pickle
 import numpy as np
 import tensorflow as tf
 
-ARTIFACT_DIR = "app/ml/artifacts"
+# Absolute pathing for cloud-agnostic execution
+BASE_ML_DIR = os.path.dirname(os.path.abspath(__file__))
+ARTIFACT_DIR = os.path.join(BASE_ML_DIR, "artifacts")
 
 # Global Variables
 pipeline_config = {}

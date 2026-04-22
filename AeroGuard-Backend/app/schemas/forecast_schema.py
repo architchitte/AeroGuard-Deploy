@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Optional, Any
 
 class ForecastRequest(BaseModel):
@@ -17,6 +17,7 @@ class ForecastResponse(BaseModel):
         ...,
         description="Individual predictions from SARIMA, XGBoost, and LSTM for each target"
     )
+    model_config = ConfigDict(protected_namespaces=())
 
 class LocationForecastResponse(BaseModel):
     location_id: str
@@ -32,3 +33,4 @@ class HourlyForecastResponse(BaseModel):
     location_id: str
     forecast: List[Dict[str, Any]]
     model_type: str
+    model_config = ConfigDict(protected_namespaces=())
