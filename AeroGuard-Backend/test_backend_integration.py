@@ -49,7 +49,7 @@ def test_ml_forecasting(client: httpx.Client):
     
     # Create a dummy payload matching ForecastRequest schema (a 2D list of floats).
     # Shape logic depends on your specific model, assuming 24 timesteps by 15 features here.
-    dummy_features = [[0.5] * 11 for _ in range(24)] 
+    dummy_features = [[0.5] * 11 for _ in range(7)] 
     payload = {"features": dummy_features}
     
     try:

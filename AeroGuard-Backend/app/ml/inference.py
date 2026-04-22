@@ -2,6 +2,7 @@ import os
 import json
 import joblib
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 import keras
 from fastapi import HTTPException
@@ -19,7 +20,21 @@ model_xgboost = None
 model_lstm = None
 models_sarima = {}  # Dictionary to hold SARIMA models per target
 
+def safe_load_keras_model(model_path):
+    """
+    Helper to load Keras models with a fallback for 'quantization_config' version mismatches.
+    """
+    try:
+        return keras.models.load_model(model_path)
+    except TypeError as e:
+        if "quantization_config" in str(e):
+            # Fallback for Colab-to-Local Keras 3 migrations with unexpected keys
+            print(f"DEBUG: Falling back to compile=False due to version mismatch: {e}")
+            return keras.models.load_model(model_path, compile=False)
+        raise e
+
 def _load_artifacts():
+
     global pipeline_config, ensemble_weights, scaler_X, scaler_y
     global model_xgboost, model_lstm, models_sarima
     
@@ -41,9 +56,10 @@ def _load_artifacts():
         model_xgboost = joblib.load(os.path.join(ARTIFACT_DIR, "xgb_model.joblib"))
         print(f"DEBUG: model_xgboost loaded: {model_xgboost is not None}")
         
-        # Use native Keras 3 functional model loader (matches Colab export)
-        model_lstm = keras.models.load_model(os.path.join(ARTIFACT_DIR, "lstm_model.keras"))
+        # Use native Keras 3 functional model loader with safe fallback
+        model_lstm = safe_load_keras_model(os.path.join(ARTIFACT_DIR, "lstm_model.keras"))
         print(f"DEBUG: model_lstm loaded: {model_lstm is not None}")
+
 
 
 
@@ -113,22 +129,32 @@ async def generate_ensemble_forecast(features: list) -> dict:
         raise ValueError("Pipeline configuration is missing TARGETS list or 'target' key.")
 
 
-    # 1. Convert features to a NumPy array and scale them using scaler_X
-    X_raw = np.array(features)
+    # 1. Convert features to a Pandas DataFrame to maintain feature names and avoid warnings
+    # Input 'features' is expected to be a 2D array of shape (7, 11)
+    feature_names = pipeline_config.get("feature_cols", [])
+    if not feature_names:
+        # Fallback to numpy if names are missing
+        X_raw = np.array(features)
+    else:
+        X_raw = pd.DataFrame(features, columns=feature_names)
+    
+    # Scale directly on the 2D array/DataFrame (7 rows x 11 features)
     X_scaled = scaler_X.transform(X_raw)
 
     # 2. Run inference on LSTM
-    # LSTM expects 3D input: (batch_size, timesteps, features)
-    lstm_input = X_scaled.reshape(1, X_scaled.shape[0], X_scaled.shape[1])
+    # LSTM expects 3D input: (batch_size, timesteps, features) -> (1, 7, 11)
+    lstm_input = X_scaled.reshape(1, 7, 11)
     lstm_pred_scaled = model_lstm.predict(lstm_input, verbose=0)
     
     # 3. Run inference on XGBoost
-    # XGBoost typically expects 2D flattened input for lookback windows
+    # XGBoost expects a flattened 2D input for the full lookback -> (1, 77)
     xgb_input = X_scaled.flatten().reshape(1, -1)
     xgb_pred_scaled = model_xgboost.predict(xgb_input)
     # Ensure it's properly reshaped to 2D for inverse transform
     if xgb_pred_scaled.ndim == 1:
         xgb_pred_scaled = xgb_pred_scaled.reshape(1, -1)
+
+
 
     # 4. Inverse transform LSTM and XGBoost outputs
     lstm_pred_raw = scaler_y.inverse_transform(lstm_pred_scaled)[0]
