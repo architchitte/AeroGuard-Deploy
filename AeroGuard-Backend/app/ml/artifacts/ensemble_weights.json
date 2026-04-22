@@ -1,0 +1,29 @@
+{
+  "weights": {
+    "SARIMA": 0.352758,
+    "XGBoost": 0.357685,
+    "LSTM": 0.289557
+  },
+  "weight_method": "inverse_mae",
+  "model_order": [
+    "SARIMA",
+    "XGBoost",
+    "LSTM"
+  ],
+  "mae_at_fit": {
+    "SARIMA": 15.898,
+    "XGBoost": 15.679,
+    "LSTM": 19.368
+  },
+  "rmse_at_fit": {
+    "SARIMA": 20.587,
+    "XGBoost": 19.541,
+    "LSTM": 24.198
+  },
+  "ensemble_metrics": {
+    "MAE": 14.628,
+    "RMSE": 18.467,
+    "MAPE": 14.18,
+    "R\u00b2": 0.6811
+  }
+}

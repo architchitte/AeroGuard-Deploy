@@ -1,0 +1,42 @@
+{
+  "target": "AQI",
+  "target_unit": "Index",
+  "feature_cols": [
+    "AQI_lag_1",
+    "AQI_lag_3",
+    "AQI_lag_7",
+    "AQI_rmean_3",
+    "AQI_rstd_3",
+    "AQI_rmean_7",
+    "AQI_rstd_7",
+    "dow_sin",
+    "dow_cos",
+    "month_sin",
+    "month_cos"
+  ],
+  "lookback": 7,
+  "freq_label": "daily",
+  "is_hourly": false,
+  "lag_steps": [
+    1,
+    3,
+    7
+  ],
+  "roll_wins": [
+    3,
+    7
+  ],
+  "seasonality": 7,
+  "sarima_order": [
+    1,
+    1,
+    1
+  ],
+  "sarima_seasonal_order": [
+    1,
+    1,
+    0,
+    7
+  ],
+  "n_features": 11
+}
