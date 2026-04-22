@@ -118,8 +118,8 @@ export default function AdvancedAnalytics({ location, persona }) {
       </div>
 
       {/* ── Chart ── */}
-      <div className="h-44 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-44 w-full min-h-[176px]">
+        <ResponsiveContainer width="100%" height="100%" minHeight={176}>
           {activeChart === "trend" ? (
             <AreaChart data={historyData} margin={{ top: 5, right: 5, left: -28, bottom: 0 }}>
               <defs>

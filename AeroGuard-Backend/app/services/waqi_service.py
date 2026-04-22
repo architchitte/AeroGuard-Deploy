@@ -2,30 +2,30 @@ import httpx
 from fastapi import HTTPException
 from app.core.config import settings
 
-async def fetch_realtime_aqi(city: str) -> dict:
+async def fetch_realtime_aqi(city: str = None, lat: float = None, lon: float = None) -> dict:
     """
     Fetch real-time AQI and meteorological data from the WAQI API.
     
     Args:
-        city (str): Name of the city to query.
+        city (str, optional): Name of the city to query.
+        lat (float, optional): Latitude for geo-query.
+        lon (float, optional): Longitude for geo-query.
         
     Returns:
         dict: The 'data' payload from the WAQI JSON response.
-        
-    Raises:
-        fastapi.HTTPException: 
-            - 404 if WAQI returns an 'error' status (e.g., 'Unknown station').
-            - 503 for network/timeout errors.
-            - 502/Other for HTTP status errors from the server.
     """
-    # Assuming the config variable is named REALTIME_AQI_API_KEY 
-    # based on earlier iterations (or WAQI_API_KEY as per the prompt).
-    # Using REALTIME_AQI_API_KEY since it was defined in app/core/config.py
     api_key = getattr(settings, "REALTIME_AQI_API_KEY", None)
     if not api_key:
         raise HTTPException(status_code=500, detail="WAQI API Key not configured.")
         
-    url = f"https://api.waqi.info/feed/{city}/?token={api_key}"
+    if lat is not None and lon is not None:
+        feed = f"geo:{lat};{lon}"
+    elif city:
+        feed = city
+    else:
+        raise HTTPException(status_code=400, detail="Either city or coordinates must be provided.")
+
+    url = f"https://api.waqi.info/feed/{feed}/?token={api_key}"
     
     try:
         async with httpx.AsyncClient() as client:

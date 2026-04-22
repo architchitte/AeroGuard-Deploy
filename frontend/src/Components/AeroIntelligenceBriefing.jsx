@@ -10,6 +10,7 @@ const SEV_CONFIG = {
 export default function AeroIntelligenceBriefing({ city = "Mumbai", persona = "general" }) {
   const [loading, setLoading] = useState(true);
   const [briefing, setBriefing] = useState(null);
+  const [cooldown, setCooldown] = useState(false);
 
   const personaMap = { general: "general_public", vulnerable: "elderly", outdoor: "athletes" };
 
@@ -17,10 +18,17 @@ export default function AeroIntelligenceBriefing({ city = "Mumbai", persona = "g
     (async () => {
       try {
         setLoading(true);
+        setCooldown(false);
         const res = await analyticsService.getAIBriefing(city, personaMap[persona] || "general_public");
         const norm = res?.data?.explanation ? res.data : res?.explanation ? res : null;
         setBriefing(norm);
-      } catch { setBriefing(null); }
+      } catch (err) {
+        if (err.message === "RATE_LIMITED") {
+          setCooldown(true);
+        } else {
+          setBriefing(null);
+        }
+      }
       finally { setLoading(false); }
     })();
   }, [city, persona]);
@@ -31,6 +39,13 @@ export default function AeroIntelligenceBriefing({ city = "Mumbai", persona = "g
       <div className="h-3 w-full bg-[#242F49] rounded-full" />
       <div className="h-3 w-2/3 bg-[#242F49] rounded-full" />
       <div className="h-3 w-1/2 bg-[#242F49] rounded-full opacity-50" />
+    </div>
+  );
+
+  if (cooldown) return (
+    <div className="py-6 text-center border border-dashed border-orange-500/20 rounded-2xl bg-orange-500/5">
+      <p className="text-xl mb-2">⏳</p>
+      <span className="text-[10px] font-bold text-orange-400 italic">AI limits reached. Cooldown engaged...</span>
     </div>
   );
 

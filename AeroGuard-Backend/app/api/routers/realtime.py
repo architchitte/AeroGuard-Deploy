@@ -13,6 +13,14 @@ async def get_city_aqi(city_name: str):
     data = await fetch_realtime_aqi(city=city_name)
     return {"status": "success", "city": city_name, "data": data}
 
+@router.get("/coordinates")
+async def get_coordinates_aqi(latitude: float, longitude: float):
+    """
+    Fetch real-time AQI data based on coordinates via WAQI.
+    """
+    data = await fetch_realtime_aqi(lat=latitude, lon=longitude)
+    return {"status": "success", "data": data}
+
 
 @router.get("/popular-cities")
 async def get_popular_cities():

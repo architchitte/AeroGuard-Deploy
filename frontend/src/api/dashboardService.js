@@ -39,15 +39,33 @@ export const dashboardService = {
 
             // 2. Fetch Forecast (Optional - fail gracefully)
             let forecastData = [];
+            let components = null;
+            let modelsWarmingUp = false;
             try {
-                const forecastResponse = await apiClient.get(`/api/v1/forecast/${city}`, {
-                    params: { days_ahead: 1 }
+                // Generate a dummy 7x11 feature payload for the ML ensemble
+                const dummyFeatures = Array.from({ length: 7 }, () => Array(11).fill(0.5));
+                const forecastResponse = await apiClient.post(`/api/v1/forecast/`, {
+                    features: dummyFeatures
                 });
                 if (forecastResponse.data) {
-                    forecastData = forecastResponse.data.predictions || [];
+                    // Extract predictions based on new response schema
+                    const aqiForecast = forecastResponse.data.forecasts?.AQI || 100;
+                    components = forecastResponse.data.components;
+                    
+                    // The dashboard expects an hourly array (forecast_8h), we mock it using the ensemble output
+                    forecastData = Array.from({ length: 8 }, (_, i) => ({
+                        time: new Date(Date.now() + i * 3600000).getHours() + ":00",
+                        aqi: Math.max(0, Math.round(aqiForecast + (Math.random() * 10 - 5))),
+                        risk: getRiskLevel(aqiForecast).level
+                    }));
                 }
             } catch (e) {
-                console.warn('Forecast API failed, using mock forecast', e);
+                if (e.response && e.response.status === 503) {
+                    console.warn("ML Models are warming up (Cold Start). Showing loading state...");
+                    modelsWarmingUp = true;
+                } else {
+                    console.warn('Forecast API failed, using mock forecast', e);
+                }
                 const current = aqiData?.aqi || 100;
                 forecastData = Array.from({ length: 8 }, (_, i) => ({
                     time: new Date(Date.now() + i * 3600000).getHours() + ":00",
@@ -62,7 +80,7 @@ export const dashboardService = {
 
             return {
                 location: {
-                    city: aqiData?.station || aqiData?.city || city,
+                    city: (typeof aqiData?.city === 'object' ? aqiData?.city?.name : aqiData?.city) || aqiData?.station || city,
                     lat: aqiData?.lat || lat || 28.7,
                     lon: aqiData?.lon || lon || 77.1
                 },
@@ -71,9 +89,9 @@ export const dashboardService = {
                     category: aqiData?.category || risk.level,
                     updated_at: aqiData?.timestamp || new Date().toISOString()
                 },
-                pollutants: Object.fromEntries(Object.entries(aqiData?.pollutants || {}).map(([key, value]) => [
+                pollutants: Object.fromEntries(Object.entries(aqiData?.iaqi || {}).map(([key, val]) => [
                     key,
-                    { value, trend: "flat" }
+                    { value: val.v ?? val, trend: "flat" }
                 ])),
                 weather: {
                     temp: aqiData?.temperature || 32,
@@ -93,7 +111,9 @@ export const dashboardService = {
                     time: f.time || f.timestamp?.split('T')[1]?.slice(0, 5) || "12:00",
                     aqi: f.predicted_aqi || f.aqi,
                     risk: "N/A"
-                })) : []
+                })) : [],
+                models_warming_up: modelsWarmingUp,
+                model_components: components
             };
 
         } catch (error) {

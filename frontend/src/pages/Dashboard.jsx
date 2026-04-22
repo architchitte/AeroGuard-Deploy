@@ -180,6 +180,16 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#101525] text-[#FFA586] overflow-x-hidden flex flex-col">
+      {/* ══ NOTIFICATIONS ══ */}
+      {data?.models_warming_up && (
+        <div className="fixed bottom-6 right-6 z-50 glass-card px-5 py-4 rounded-2xl border-[#B51A2B]/40 bg-[#101525]/90 flex items-center gap-4 shadow-[0_10px_40px_rgba(181,26,43,0.3)] animate-in slide-in-from-bottom-8">
+            <div className="w-5 h-5 rounded-full border-[3px] border-[#B51A2B]/30 border-t-[#B51A2B] animate-spin" />
+            <div className="flex flex-col">
+                <span className="text-[11px] font-black text-white uppercase tracking-widest">System Warming Up</span>
+                <span className="text-[10px] text-[#9BA3AF] font-medium">ML ensemble is initializing...</span>
+            </div>
+        </div>
+      )}
 
       {/* ══ AMBIENT BG ══ */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -198,7 +208,9 @@ export default function Dashboard() {
             </div>
             <div className="flex flex-col">
               <span className="text-[7px] uppercase font-black tracking-[0.2em] text-[#D1A5A5] hidden sm:block">📍 Real-time Link</span>
-              <span className="text-[10px] sm:text-[11px] font-black text-[#FFA586] truncate max-w-[80px] sm:max-w-[180px] tracking-tight">{selectedLocation.name}</span>
+              <span className="text-[10px] sm:text-[11px] font-black text-[#FFA586] truncate max-w-[80px] sm:max-w-[180px] tracking-tight">
+                {typeof selectedLocation?.name === 'string' ? selectedLocation.name : selectedLocation?.name?.name || "Unknown Node"}
+              </span>
             </div>
             <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#B51A2B]/30 bg-[#B51A2B]/10 ml-2">
               <span className="text-xs">{band.emoji}</span>
@@ -314,7 +326,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-5 flex justify-between items-center pt-3 border-t border-[#384358]/15 text-[9px] font-bold text-[#9BA3AF] uppercase">
-                <span>🏙️ {data.location?.city || selectedLocation.name}</span>
+                <span>🏙️ {typeof data.location?.city === 'string' ? data.location.city : selectedLocation?.name || "Unknown"}</span>
                 <span className="text-[#B51A2B]">✅ Verified</span>
               </div>
             </div>
@@ -344,7 +356,7 @@ export default function Dashboard() {
               </div>
 
               <div className="flex-1 min-h-[160px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={160}>
                   <AreaChart data={forecast6h} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                     <defs>
                       <linearGradient id="foreGrad" x1="0" y1="0" x2="0" y2="1">

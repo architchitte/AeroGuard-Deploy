@@ -171,7 +171,10 @@ export const analyticsService = {
         params: { city, persona },
       });
       return res.data;
-    } catch {
+    } catch (e) {
+      if (e.response && e.response.status === 429) {
+          throw new Error("RATE_LIMITED");
+      }
       return {
         status: "success",
         data: {

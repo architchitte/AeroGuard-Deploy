@@ -33,7 +33,22 @@ export const getHealthRisk = async (aqi, location = null, pollutant = 'PM2.5', p
         if (persona) params.persona = persona;
 
         const response = await apiClient.get('/api/v1/health-risk', { params });
-        return response.data;
+        const backendData = response.data;
+        
+        // Merge with fallback to get the full rich structure that the UI expects
+        const baseRisk = getFallbackHealthRisk(aqi, location, pollutant, persona);
+        
+        if (backendData.actionable_advice) {
+             baseRisk.persona_advice = { advice: backendData.actionable_advice };
+             if (backendData.risk_category) {
+                 baseRisk.aqi.category = backendData.risk_category;
+                 baseRisk.aqi.risk_level = getRiskLevel(backendData.risk_category);
+                 baseRisk.aqi.color_code = getColorCode(backendData.risk_category);
+             }
+             baseRisk.model_source = "AeroGuard AI API";
+        }
+        
+        return baseRisk;
     } catch (error) {
         console.error('Health risk API failed:', error);
         // Fallback to rule-based assessment

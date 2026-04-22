@@ -231,7 +231,7 @@ export function HealthRisk() {
                           color: getAQIColor(aqiData?.aqi ?? 0)
                         }}
                       >
-                        {aqiData?.category || 'Analyzing...'}
+                        {typeof aqiData?.category === 'string' ? aqiData.category : (typeof aqiData?.category === 'object' ? aqiData?.category?.name : 'Analyzing...')}
                       </div>
                     </div>
 
