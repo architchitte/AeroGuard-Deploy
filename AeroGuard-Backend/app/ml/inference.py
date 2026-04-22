@@ -1,9 +1,10 @@
 import os
 import json
 import joblib
-import pickle
 import numpy as np
 import tensorflow as tf
+import keras
+from fastapi import HTTPException
 
 # Absolute pathing for cloud-agnostic execution
 BASE_ML_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -32,21 +33,45 @@ def _load_artifacts():
             
         # Load scalers (.joblib as requested)
         scaler_X = joblib.load(os.path.join(ARTIFACT_DIR, "scaler_X.joblib"))
+        print(f"DEBUG: scaler_X loaded: {scaler_X is not None}")
         scaler_y = joblib.load(os.path.join(ARTIFACT_DIR, "scaler_y.joblib"))
+        print(f"DEBUG: scaler_y loaded: {scaler_y is not None}")
         
         # Load XGBoost (.joblib) and LSTM (.keras) models
-        model_xgboost = joblib.load(os.path.join(ARTIFACT_DIR, "xgb_multi_model.joblib"))
-        model_lstm = tf.keras.models.load_model(os.path.join(ARTIFACT_DIR, "lstm_model.keras"))
+        model_xgboost = joblib.load(os.path.join(ARTIFACT_DIR, "xgb_model.joblib"))
+        print(f"DEBUG: model_xgboost loaded: {model_xgboost is not None}")
         
-        # Load SARIMA models iteratively based on TARGETS
+        # Use native Keras 3 functional model loader (matches Colab export)
+        model_lstm = keras.models.load_model(os.path.join(ARTIFACT_DIR, "lstm_model.keras"))
+        print(f"DEBUG: model_lstm loaded: {model_lstm is not None}")
+
+
+
+        
+        # Load SARIMA models iteratively based on TARGETS or target
+        # Support both 'TARGETS' (list) and 'target' (string) for flexibility
         targets = pipeline_config.get("TARGETS", [])
+        if not targets and "target" in pipeline_config:
+            targets = [pipeline_config["target"]]
+            
         for target in targets:
-            sarima_path = os.path.join(ARTIFACT_DIR, f"sarima_{target}.pkl")
-            if os.path.exists(sarima_path):
-                with open(sarima_path, "rb") as f:
-                    models_sarima[target] = pickle.load(f)
-            else:
-                print(f"Warning: SARIMA model for target {target} not found at {sarima_path}")
+            # Try both sarima_{target}.pkl and sarima_model.pkl (fallback)
+            paths_to_try = [
+                os.path.join(ARTIFACT_DIR, f"sarima_AQI.pkl"),
+                os.path.join(ARTIFACT_DIR, "sarima_model.pkl")
+            ]
+            
+            loaded = False
+            for sarima_path in paths_to_try:
+                if os.path.exists(sarima_path):
+                    with open(sarima_path, "rb") as f:
+                        models_sarima[target] = pickle.load(f)
+                    loaded = True
+                    break
+            
+            if not loaded:
+                print(f"Warning: SARIMA model for target {target} not found.")
+
 
         print("Successfully loaded all ML artifacts for the Weighted Ensemble.")
     except Exception as e:
@@ -60,12 +85,33 @@ async def generate_ensemble_forecast(features: list) -> dict:
     Executes inference across LSTM, XGBoost, and SARIMA models for multi-pollutant targets.
     Scales inputs, inverse-transforms outputs, and calculates weighted ensemble predictions.
     """
-    if scaler_X is None or scaler_y is None:
-        raise ValueError("ML models or scalers are not loaded. Ensure artifacts exist in app/ml/artifacts.")
+    global scaler_X, scaler_y, pipeline_config, ensemble_weights, model_xgboost, model_lstm, models_sarima
 
+    if scaler_X is None or scaler_y is None:
+        raise HTTPException(status_code=503, detail="ML scalers failed to load. Check server artifacts.")
+
+    if model_xgboost is None:
+        raise HTTPException(status_code=503, detail="XGBoost model failed to load. Please check artifacts/xgb_model.joblib.")
+
+    if model_lstm is None:
+        raise HTTPException(status_code=503, detail="LSTM model failed to load. Please check artifacts/lstm_model.keras.")
+
+
+
+    # Safety check: Ensure scalers are fitted before calling transform/inverse_transform
+
+    if not hasattr(scaler_X, "n_features_in_") or not hasattr(scaler_y, "n_features_in_"):
+        raise ValueError("Loaded scalers appear to be unfitted. Check if scaler_X.joblib and scaler_y.joblib are valid fitted objects.")
+
+
+    # Support both 'TARGETS' (list) and 'target' (string)
     targets = pipeline_config.get("TARGETS", [])
+    if not targets and "target" in pipeline_config:
+        targets = [pipeline_config["target"]]
+        
     if not targets:
-        raise ValueError("Pipeline configuration is missing TARGETS list.")
+        raise ValueError("Pipeline configuration is missing TARGETS list or 'target' key.")
+
 
     # 1. Convert features to a NumPy array and scale them using scaler_X
     X_raw = np.array(features)

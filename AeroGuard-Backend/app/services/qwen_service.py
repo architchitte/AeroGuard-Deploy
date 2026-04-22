@@ -1,4 +1,5 @@
 import httpx
+import asyncio
 from fastapi import HTTPException
 from app.core.config import settings
 from app.schemas.ai_schema import ExplainForecastRequest
@@ -6,7 +7,39 @@ from app.schemas.ai_schema import ExplainForecastRequest
 NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 MODEL_NAME = "qwen/qwen3-coder-480b-a35b-instruct"
 
+async def _call_nvidia_api(payload: dict) -> dict:
+    """
+    Internal helper to call the NVIDIA API with basic retry logic for 429/503 errors.
+    """
+    headers = {
+        "Authorization": f"Bearer {settings.NVIDIA_QWEN_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        for attempt in range(2): # Try twice
+            try:
+                response = await client.post(NVIDIA_API_URL, headers=headers, json=payload, timeout=20.0)
+                
+                # Check for rate limit or service overload
+                if response.status_code in [429, 503] and attempt == 0:
+                    print(f"DEBUG: NVIDIA API returned {response.status_code}. Retrying in 2 seconds...")
+                    await asyncio.sleep(2)
+                    continue
+                    
+                response.raise_for_status()
+                return response.json()
+                
+            except (httpx.RequestError, httpx.HTTPStatusError) as e:
+                if attempt == 1: # Last attempt
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"NVIDIA API Service Unavailable: {str(e)}"
+                    )
+    return {} # Should not reach here
+
 async def generate_health_briefing(city: str, persona: str) -> dict:
+
     """
     Generate an empathetic health briefing and actionable advice using NVIDIA's Qwen API.
     
@@ -43,29 +76,22 @@ async def generate_health_briefing(city: str, persona: str) -> dict:
         "max_tokens": 250
     }
     
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(NVIDIA_API_URL, headers=headers, json=payload, timeout=15.0)
-            response.raise_for_status()
-            
-            result = response.json()
-            content = result["choices"][0]["message"]["content"]
-            
-            # Parse the strict formatting requested in the system prompt
-            parts = content.split("Advice:")
-            briefing = parts[0].replace("Briefing:", "").strip()
-            advice = parts[1].strip() if len(parts) > 1 else "Please monitor local air quality updates."
-            
-            return {
-                "briefing": briefing,
-                "advice": advice
-            }
-            
-    except (httpx.RequestError, httpx.HTTPStatusError) as e:
-        raise HTTPException(
-            status_code=503,
-            detail=f"NVIDIA API Service Unavailable: {str(e)}"
-        )
+    result = await _call_nvidia_api(payload)
+    if not result:
+        return {"briefing": "Unable to generate briefing.", "advice": "Please check local AQI manually."}
+        
+    content = result["choices"][0]["message"]["content"]
+    
+    # Parse the strict formatting requested in the system prompt
+    parts = content.split("Advice:")
+    briefing = parts[0].replace("Briefing:", "").strip()
+    advice = parts[1].strip() if len(parts) > 1 else "Please monitor local air quality updates."
+    
+    return {
+        "briefing": briefing,
+        "advice": advice
+    }
+
 
 async def explain_forecast(request: ExplainForecastRequest) -> str:
     """
@@ -102,16 +128,9 @@ async def explain_forecast(request: ExplainForecastRequest) -> str:
         "max_tokens": 250
     }
     
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(NVIDIA_API_URL, headers=headers, json=payload, timeout=15.0)
-            response.raise_for_status()
-            
-            result = response.json()
-            return result["choices"][0]["message"]["content"].strip()
-            
-    except (httpx.RequestError, httpx.HTTPStatusError) as e:
-        raise HTTPException(
-            status_code=503,
-            detail=f"NVIDIA API Service Unavailable: {str(e)}"
-        )
+    result = await _call_nvidia_api(payload)
+    if not result:
+        return "Unable to explain forecast at this time."
+        
+    return result["choices"][0]["message"]["content"].strip()
+
