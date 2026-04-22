@@ -1,6 +1,7 @@
 import os
 import json
 import joblib
+import pickle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -147,8 +148,8 @@ async def generate_ensemble_forecast(features: list) -> dict:
     lstm_pred_scaled = model_lstm.predict(lstm_input, verbose=0)
     
     # 3. Run inference on XGBoost
-    # XGBoost expects a flattened 2D input for the full lookback -> (1, 77)
-    xgb_input = X_scaled.flatten().reshape(1, -1)
+    # XGBoost expects 11 features (most recent timestep) -> (1, 11)
+    xgb_input = X_scaled[-1].reshape(1, -1)
     xgb_pred_scaled = model_xgboost.predict(xgb_input)
     # Ensure it's properly reshaped to 2D for inverse transform
     if xgb_pred_scaled.ndim == 1:
