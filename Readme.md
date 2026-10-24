@@ -146,8 +146,8 @@ Built with ❤️ by **Team 70 — CultBoyz** for **AIColegion 2026** @ **VESIT 
 <table align="center">
   <tr>
     <td align="center">
-      <a href="https://github.com/Anshul-patil10">
-        <img src="https://avatars.githubusercontent.com/Anshul-patil10?v=4" width="100px;" alt="Anshul Patil"/><br />
+      <a href="https://github.com/anshulpdev10">
+        <img src="https://avatars.githubusercontent.com/anshulpdev10?v=4" width="100px;" alt="Anshul Patil"/><br />
         <sub><b>Anshul Patil</b></sub>
       </a><br />
       <sub>Frontend Design &<br/>API Integration</sub>
