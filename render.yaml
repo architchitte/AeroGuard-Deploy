@@ -1,0 +1,30 @@
+# Render Blueprint — deploys the FastAPI backend.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: aeroguard-deploy
+    runtime: python
+    rootDir: AeroGuard-Backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: TF_CPP_MIN_LOG_LEVEL
+        value: "2"
+      - key: REALTIME_AQI_API_KEY
+        sync: false
+      - key: NVIDIA_QWEN_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      # Comma-separated list of allowed frontend origins, e.g.
+      # https://aeroguard.vercel.app,http://localhost:5173
+      - key: CORS_ORIGINS
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO

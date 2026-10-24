@@ -42,19 +42,26 @@ AeroGuard is a **cinematic, AI-driven atmospheric intelligence platform** design
 ## 📁 File Structure
 
 ```text
-AeroGuard/
-├── Backend/                 # Flask / FastAPI Architecture
+AeroGuard-Deploy/
+├── AeroGuard-Backend/       # FastAPI service (deployed to Render)
 │   ├── app/
-│   │   ├── routes/          # API Blueprints (AI, AQI, Forecast, Risk)
-│   │   ├── services/        # Business Logic & ML Service Layer
-│   │   └── utils/           # Shared helpers & Error Handlers
-│   └── run.py               # Main Entry Point
-├── frontend/                # React / Vite Infrastructure
+│   │   ├── api/routers/     # API routes (AI, AQI, Forecast, Risk, Analytics)
+│   │   ├── core/config.py   # Env-driven settings
+│   │   ├── ml/              # Inference engine + trained artifacts
+│   │   ├── schemas/         # Pydantic models
+│   │   ├── services/        # Business logic & external API clients
+│   │   └── main.py          # FastAPI entry point
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── .env.example
+├── frontend/                # React / Vite app (deployed to Vercel)
 │   ├── src/
 │   │   ├── Components/      # Complex UI (Heatmap, Analytics, Search)
 │   │   ├── pages/           # High-level Views (Dashboard, Risk, Landing)
 │   │   └── api/             # Frontend API Utilities
-│   └── package.json
+│   ├── vercel.json
+│   └── .env.example
+├── render.yaml              # Render Blueprint for the backend
 └── Readme.md
 ```
 
@@ -78,18 +85,22 @@ AeroGuard/
 
 ## ⚙️ How to Run
 
-### 1. Backend Setup
+### 1. Backend Setup (Python 3.11)
 ```bash
-cd Backend
+cd AeroGuard-Backend
 python -m venv venv
 # Windows
 .\venv\Scripts\activate
+# macOS / Linux
+source venv/bin/activate
 # Dependencies
-pip install -r requirements-fixed.txt
+pip install -r requirements.txt
+# Configure (then fill in your API keys)
+cp .env.example .env
 # Run
-python run.py
+uvicorn app.main:app --reload --port 8000
 ```
-*Note: Ensure `REALTIME_WAQI_API_KEY` is set in your `.env`.*
+*Note: `REALTIME_AQI_API_KEY` and `NVIDIA_QWEN_API_KEY` are required — the server will not start without them.* Interactive docs are served at `http://localhost:8000/docs`.
 
 ### 2. Frontend Setup
 ```bash
@@ -97,6 +108,34 @@ cd frontend
 npm install
 npm run dev
 ```
+On `localhost` the frontend talks to `http://localhost:8000` automatically.
+
+---
+
+## 🚀 Deployment
+
+### Backend → Render
+1. In Render, choose **New → Blueprint** and select this repository. `render.yaml` configures the service (`rootDir: AeroGuard-Backend`, Python 3.11, health check on `/`).
+2. Fill in the secret environment variables when prompted:
+   - `REALTIME_AQI_API_KEY` — WAQI token
+   - `NVIDIA_QWEN_API_KEY` — NVIDIA NIM key
+   - `CORS_ORIGINS` — comma-separated frontend origins, e.g. `https://your-app.vercel.app`
+3. Deploy. `SECRET_KEY` / `JWT_SECRET_KEY` are generated automatically.
+
+> TensorFlow + XGBoost need roughly 1 GB of RAM at runtime; Render's free 512 MB instance may run out of memory. Use the *Starter* plan or larger if you see OOM restarts.
+
+**Docker alternative** (Railway, Fly.io, Cloud Run, etc.):
+```bash
+cd AeroGuard-Backend
+docker build -t aeroguard-api .
+docker run -p 8000:8000 --env-file .env aeroguard-api
+```
+
+### Frontend → Vercel
+1. Import the repository in Vercel and set **Root Directory** to `frontend` (framework preset: Vite).
+2. Set `VITE_API_BASE_URL` to your backend URL (defaults to `https://aeroguard-deploy.onrender.com` if unset).
+3. Deploy. `vercel.json` rewrites all routes to `index.html` for client-side routing.
+4. Add the resulting Vercel URL to the backend's `CORS_ORIGINS`.
 
 ---
 

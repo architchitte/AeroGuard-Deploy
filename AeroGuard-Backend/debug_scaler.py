@@ -2,8 +2,8 @@ import joblib
 import os
 import sys
 
-# Define absolute path to artifacts
-BASE_DIR = r"c:\Users\MSUSERSL123\Desktop\New folder\AeroGuard-Deploy\AeroGuard-Backend\app\ml\artifacts"
+# Resolve artifacts path relative to this script
+BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app", "ml", "artifacts")
 SCALER_PATH = os.path.join(BASE_DIR, "scaler_y.joblib")
 
 print(f"--- Artifact Integrity Check ---")

@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.git
+.gitignore
+Dockerfile
+.dockerignore
+debug_scaler.py
+test_backend_integration.py

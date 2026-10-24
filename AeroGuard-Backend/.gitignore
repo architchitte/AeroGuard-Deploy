@@ -113,6 +113,7 @@ celerybeat.pid
 
 # Environments
 .env
+!.env.example
 .venv
 env/
 venv/
@@ -150,5 +151,5 @@ cython_debug/
 # VS Code
 .vscode/
 
-# ML Artifacts (Large files)
-app/ml/artifacts/
+# NOTE: app/ml/artifacts/ is intentionally tracked — the API needs the
+# trained models at runtime.
